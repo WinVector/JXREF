@@ -2,7 +2,11 @@
 4-1-2013 (not a joke)
 
  Program to check Manning Publications Agile Author XML for some cross
- reference issues (Java based).  License GPL3.  Experimental code we
+ reference issues (Java based).  Property Win-Vector LLC.  
+ Distribuiton license: GPL3 or later.
+ Hosted at: https://github.com/WinVector/JXREF
+
+ Experimental code we
  use for our book, no statements of fitness or guarantees given here.
  probably does not yet properly cover all of DocBook cases (mostly 
  put checks for structures we used).  Assumes well-formed XML pretty
@@ -17,6 +21,8 @@ To Use:
  cross-references defined from other files, append with
  _external_links.xml the strategy is to get all possible external refs
  by add a line of XML like: <xi:include href="X_external_links.xml"/>
+ (you should remove this include before pushing files to Manning,
+ we suggest using something like "fgrep -v '_external_links.xml'").
 
  Example production of external links in test/GoodBook
  
