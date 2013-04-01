@@ -33,3 +33,26 @@ To Use:
   As a final side effect chapter plus level-1 section names are printed.
 
   Example errors reported in test/BadBook
+
+
+
+
+Example of good run:
+
+working in: GoodBook/.
+reading:	book.xml	./book.xml
+	reading referenced content
+	Chapter 1: Good Chapter 1
+		sect
+	Chapter 2: Good Chapter 2
+		sect
+	writing links
+total Errors: 0
+done
+
+which produces the files:
+   GoodChapter1.xml_external_links.xml
+   GoodChapter2.xml_external_links.xml
+
+Each files contains all the defined id's in the book that are not in
+the chapter in question. Look in test/GoodBook for the simple book example.
