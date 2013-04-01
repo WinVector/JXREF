@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://www.manning.com/schemas/book manning-book.xsd"
+ xmlns="http://www.manning.com/schemas/book"
+ xmlns:ns="http://www.manning.com/schemas/book"
+ xmlns:xi="http://www.w3.org/2001/XInclude"
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	id="BadChapter" label="1" xreflabel="1: Bad Chapter">
+	<title>Chapter 1: Bad Chapter</title> 
+        <sect1>
+		<title>sect</title>
+		<para id=" badTag">bad tag</para>
+		<para id="dupTag">dup tag1</para>
+		<para id="dupTag">dup tag2</para>
+		<co id="badCO1"/>
+		<informalexample annotations="below"><programlisting>
+disordered callout <co id="coListing1a"/>
+disordered callout <co id="coListing1b"/>
+			</programlisting>
+			<calloutlist>
+				<callout arearefs="coListing1b">disordered b</callout>
+				<callout arearefs="coListing1a">disordered a</callout>
+			</calloutlist>
+		</informalexample>
+		<co id="badCO2"/>
+		<callout arearefs="coListing3b">bad arrearefs</callout>
+		<informalexample annotations="below"><programlisting>
+dangling callout <co id="coListing2a"/>
+callout <co id="coListing2b"/>
+			</programlisting>
+			<calloutlist>
+				<callout arearefs="coListing1a">cross block callout</callout>
+				<callout arearefs="coListing2b">callout</callout>
+			</calloutlist>
+		</informalexample>
+		<co id="badCO3"/>
+		<informalexample annotations="below"><programlisting>
+dup callout1 <co id="coListing3a"/>
+dup callout2 <co id="coListing3a"/>
+			</programlisting>
+			<calloutlist>
+				<callout arearefs="coListing3a">dup ref 1</callout>
+				<callout arearefs="coListing3b">dup ref 2</callout>
+			</calloutlist>
+		</informalexample>
+		<informalexample annotations="below"><programlisting>
+confuse case 1 <co id="coConfuseCase"/>
+confuse case 2 <co id="coconfusecase"/>
+			</programlisting>
+			<calloutlist>
+				<callout arearefs="coConfuseCase">confuse case 1</callout>
+				<callout arearefs="coconfusecase">confuse case 2</callout>
+			</calloutlist>
+		</informalexample>
+		<informalexample annotations="below"><programlisting>
+dup 1 <co id="coDup1"/>
+dup 2 <co id="coDup1"/>
+			</programlisting>
+			<calloutlist>
+				<callout arearefs="coDup1">co dup 1</callout>
+				<callout arearefs="coDup1">co dup 2</callout>
+			</calloutlist>
+		</informalexample>
+		<informalexample annotations="below"><programlisting>
+disorder 1 <co id="coDis1"/>
+disorder 2 <co id="coDis2"/>
+			</programlisting>
+			<calloutlist>
+				<callout arearefs="coDis2">co dis 2</callout>
+				<callout arearefs="coDis1">co dis 1</callout>
+			</calloutlist>
+		</informalexample>
+		<para id="confuseCase1">confuseCase1</para>
+		<para id="confusecase1">confusecase1</para>
+		<para id="targetCase">targetCase</para>
+		<para id="targetCase">targetCase2</para>
+		<para>
+			<xref linkend="unknownID"/>
+			<xref linkend="coListing1a"/>
+			<xref linkend="3badid"/>
+			<xref linkend="targetcase"/>
+			<xref linkend="targetCase2"/>
+			<xref linkend="targetcase2"/>
+		</para>
+		
+		<figure>
+			<title>Case confusion</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref="ManningPublications.jpg"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+		
+		<figure>
+			<title>Case confusion</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref="manningpublications.jpg"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+		<figure>
+			<title>non existent</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref="NotHere.jpg"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+		
+	</sect1>
+	<xi:include href="BadChapter.xml_external_links.xml"/>
+</chapter>

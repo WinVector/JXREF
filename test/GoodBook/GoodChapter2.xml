@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://www.manning.com/schemas/book manning-book.xsd"
+ xmlns="http://www.manning.com/schemas/book"
+ xmlns:ns="http://www.manning.com/schemas/book"
+ xmlns:xi="http://www.w3.org/2001/XInclude"
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	id="GoodChapter2" label="2" xreflabel="2: Good Chapter 2">
+	<title>Chapter 2: Good Chapter 2</title>
+        <sect1>
+		<title>sect</title>
+                <para>
+                  <xref linkend="GoodChapter1"/>
+                </para>
+	</sect1>
+	<xi:include href="GoodChapter2.xml_external_links.xml"/>
+</chapter>

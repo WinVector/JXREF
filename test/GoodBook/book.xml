@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://www.manning.com/schemas/book manning-book.xsd"
+ xmlns="http://www.manning.com/schemas/book"
+ xmlns:ns="http://www.manning.com/schemas/book"
+ xmlns:xi="http://www.w3.org/2001/XInclude"
+ xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <bookinfo>
+    <title>Good Book</title>
+    <subtitle>Cross ref demo</subtitle>
+    <author>
+      <firstname>John</firstname>
+      <surname>Mount</surname>
+    </author>
+  </bookinfo>
+
+  <part>
+    <title>Part 1</title>
+    <xi:include href="GoodChapter1.xml"/>
+    <xi:include href="GoodChapter2.xml"/>
+  </part>
+  
+
+</book>
