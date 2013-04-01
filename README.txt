@@ -16,7 +16,7 @@
 To Use:
 
  Run the class com.winvector.ScanIDs .  It takes no arguments and
- expect to find a file named book.xml in its working directory.  For
+ expects to find a file named book.xml in its working directory.  For
  each file named in book.xml the program creates file with all of the
  cross-references defined from other files, append with
  _external_links.xml the strategy is to get all possible external refs
