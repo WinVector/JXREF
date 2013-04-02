@@ -34,7 +34,7 @@ To Use:
    5) Use of <co id=X> and <callout arrearefs=X> in non-example context ( <example> or <informalexample> )
    6) Non-parallel structure between call-outs <co id=X> and <callout arrearefs=X>
    7) Dangling filerefs.
-   8) Unused file assets (warn)
+   8) Unused file assets in a directory named "figures" (warn)
 
   As a final side effect chapter plus level-1 section names are printed.
 
