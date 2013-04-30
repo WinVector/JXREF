@@ -36,6 +36,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *   4) Case confusion between tags
  *   5) Use of <co id=X> and <callout arrearefs=X> in non-example context ( <example> or <informalexample> )
  *   6) Non-parallel structure between call-outs <co id=X> and <callout arrearefs=X>
+ *   7) items that must have ids (and these ids must be reffered to): <example> and <figure>
  *   7) Dangling filerefs.
  *   8) Unused file assets (warn)
  *   
@@ -47,6 +48,10 @@ public final class ScanIDs {
 	public static final Set<String> callOutContexts = new HashSet<String>(Arrays.asList(new String[] {
 			"informalexample",
 			"example"
+	}));
+	
+	public static final Set<String> mustHaveId = new HashSet<String>(Arrays.asList(new String[] {
+		"co", "example", "figure"	
 	}));
 
 	
@@ -210,6 +215,7 @@ public final class ScanIDs {
 		
 		public final Map<String,TagRec> idToRec = new TreeMap<String,TagRec>(compareIgnoreCase); // map ids to record of XML element
 		public final Map<String,TagRec> cantGloballyRef = new TreeMap<String,TagRec>(compareIgnoreCase); // ids that must be used (co callouts at this point)
+		public final Map<String,TagRec> mustReferTo = new TreeMap<String,TagRec>(compareIgnoreCase); // ids must be used somewhere
 		public final Map<String,TagRec> idRefToFirstIdRef = new TreeMap<String,TagRec>(compareIgnoreCase); // uses of ids to reference  (maps to exact casing of first use)
 		public final Map<String,FileRec> fileRefToExample = new TreeMap<String,FileRec>(compareIgnoreCase); // file refs
 		// callout declaration to use matching
@@ -279,8 +285,18 @@ public final class ScanIDs {
 									}
 								}
 								cantGloballyRef.put(id,idRec);
+							} else {
+								if(mustHaveId.contains(qName)) {
+									mustReferTo.put(id, idRec);
+								}
 							}
 						}
+					}
+				} else {
+					if(mustHaveId.contains(qName)) {
+						final TagRec idRec = new TagRec(fi,qName,IDFIELD,id);
+						System.out.println("Error: " + fi + " " + idRec + " must have an ID");
+						++nErrors;
 					}
 				}
 			}
@@ -447,6 +463,13 @@ public final class ScanIDs {
 						++totErrors;	
 					}
 				}
+			}
+		}
+		for(final com.winvector.ScanIDs.CheckHandler.TagRec dest: checkHandler.mustReferTo.values()) {
+			final com.winvector.ScanIDs.CheckHandler.TagRec use = checkHandler.idRefToFirstIdRef.get(dest.id);
+			if(null==use) {
+				foundErrors.put(dest,"Error: linkend " + dest + " never referred to");
+				++totErrors;	
 			}
 		}
 		for(final String errmsgs: foundErrors.values()) {
