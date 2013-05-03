@@ -39,6 +39,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *   7) items that must have ids (and these ids must be reffered to): <example> and <figure>
  *   7) Dangling filerefs.
  *   8) Unused file assets (warn)
+ *   9) resource directories used by more than one XML file (warn)
  *   
  * @author johnmount
  *
@@ -217,12 +218,19 @@ public final class ScanIDs {
 		public final Map<String,TagRec> cantGloballyRef = new TreeMap<String,TagRec>(compareIgnoreCase); // ids that must be used (co callouts at this point)
 		public final Map<String,TagRec> mustReferTo = new TreeMap<String,TagRec>(compareIgnoreCase); // ids must be used somewhere
 		public final Map<String,TagRec> idRefToFirstIdRef = new TreeMap<String,TagRec>(compareIgnoreCase); // uses of ids to reference  (maps to exact casing of first use)
-		public final Map<String,FileRec> fileRefToExample = new TreeMap<String,FileRec>(compareIgnoreCase); // file refs
+		public final Map<String,FileRec> fileRefToExamplePerXML = new TreeMap<String,FileRec>(compareIgnoreCase); // file refs in XML
+		public final Map<String,FileRec> fileResfToExample = new TreeMap<String,FileRec>(compareIgnoreCase); // file refs overall
 		// callout declaration to use matching
 		private Set<String> knownCallOuts = null;
+		private final Set<String> perXMLResourceDirs = new TreeSet<String>();
 		private ArrayList<TagRec> callOutsMarks = null;
 		private ArrayList<TagRec> callOutsTexts = null;
 
+		public void startXMLFile(final String fi) {
+			this.fi = fi;
+			knownCallOuts = null;
+			perXMLResourceDirs.clear();
+		}
 		
 		@Override
 		public void setDocumentLocator(final Locator locator) {
@@ -339,19 +347,36 @@ public final class ScanIDs {
 				final String FILEREFFIELD = "fileref";
 				final String fileRef = attributes.getValue(FILEREFFIELD);
 				if(null!=fileRef) {
-					final FileRec prevExample = fileRefToExample.get(fileRef);
 					final TagRec here = new TagRec(fi,qName,FILEREFFIELD,fileRef);
-					if(null!=prevExample) {
-						if(prevExample.id.compareTo(fileRef)!=0) {
-							System.out.println("Error: " + here + " fileref " + fileRef + " confusing casing with " + prevExample);
-							++nErrors;						
+					{ // global issues
+						final FileRec prevGlobalExample = fileResfToExample.get(fileRef);
+						if(null!=prevGlobalExample) {
+							if(prevGlobalExample.id.compareTo(fileRef)!=0) {
+								System.out.println("Error: " + here + " fileref " + fileRef + " confusing casing with " + prevGlobalExample);
+								++nErrors;						
+							}
+						} else {
+							final File ref = new File(workingDir,fileRef);
+							fileResfToExample.put(fileRef,new FileRec(fileRef,ref));
+							if((!ref.exists())||(!ref.canRead())) {
+								System.out.println("Error: " + here + " missing referred file: " + fileRef);
+								++nErrors;
+							}
 						}
-					} else {
-						final File ref = new File(workingDir,fileRef);
-						fileRefToExample.put(fileRef,new FileRec(fileRef,ref));
-						if((!ref.exists())||(!ref.canRead())) {
-							System.out.println("Error: " + here + " missing referred file: " + fileRef);
-							++nErrors;
+					} 
+					{ // per XML file issue
+						final FileRec prevExample = fileRefToExamplePerXML.get(fileRef);
+						if(null!=prevExample) {
+						} else {
+							final File ref = new File(workingDir,fileRef);
+							fileRefToExamplePerXML.put(fileRef,new FileRec(fileRef,ref));
+							final File resourceDir = ref.getParentFile();
+							try {
+								perXMLResourceDirs.add(resourceDir.getCanonicalPath().toString());
+							} catch (IOException e) {
+								System.out.println("Error: " + here + " threw on getCanonicalPath(): " + fileRef);
+								++nErrors;
+							}
 						}
 					}
 				}
@@ -435,18 +460,29 @@ public final class ScanIDs {
 			}			
 		}
 		fileNameList.add(bookFileName);
+		int totErrors = 0;
 		final CheckHandler checkHandler = new CheckHandler();
+		final Map<String,String> resourceDirToXML = new TreeMap<String,String>();
 		{ // scan all files for tags
 			for(final String fi: fileNameList) {
 				final File f = new File(workingDir,fi);
 				//System.out.println("\treading: " + fi + "\t" + f);
-				checkHandler.fi = fi;
+				checkHandler.startXMLFile(fi);
 				saxParser.parse(f,checkHandler);
+				if(!checkHandler.perXMLResourceDirs.isEmpty()) {
+					for(final String di: checkHandler.perXMLResourceDirs) {
+						final String otherXML = resourceDirToXML.get(di);
+						if(null!=otherXML) {
+							System.out.println("WARN: resource directory " + di + " used by " + fi + " and " + otherXML);
+						}
+						resourceDirToXML.put(di,fi);
+					}					
+				}
 			}
 		}
-		int totErrors = checkHandler.nErrors;
-		// check for broken/dangling links
+		totErrors += checkHandler.nErrors;
 		final SortedMap<com.winvector.ScanIDs.CheckHandler.TagRec,String> foundErrors = new TreeMap<com.winvector.ScanIDs.CheckHandler.TagRec,String>();
+		// check for broken/dangling links
 		for(final com.winvector.ScanIDs.CheckHandler.TagRec linkend: checkHandler.idRefToFirstIdRef.values()) {
 			final com.winvector.ScanIDs.CheckHandler.TagRec forbidden = checkHandler.cantGloballyRef.get(linkend.id);
 			if(null!=forbidden) {
@@ -480,7 +516,7 @@ public final class ScanIDs {
 		scanForContent(workingDir,nameToPath);
 		final Set<File> filesSeen = new TreeSet<File>();
 		filesSeen.addAll(nameToPath.values());
-		for(final FileRec f: checkHandler.fileRefToExample.values()) {
+		for(final FileRec f: checkHandler.fileResfToExample.values()) {
 			if(!filesSeen.contains(f.f)) {
 				System.out.println("WARN: file " + f.f + " not found");
 			} else {
