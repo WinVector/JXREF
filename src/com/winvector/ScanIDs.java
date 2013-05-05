@@ -36,10 +36,10 @@ import org.xml.sax.helpers.DefaultHandler;
  *   4) Case confusion between tags
  *   5) Use of <co id=X> and <callout arrearefs=X> in non-example context ( <example> or <informalexample> )
  *   6) Non-parallel structure between call-outs <co id=X> and <callout arrearefs=X>
- *   7) items that must have ids (and these ids must be reffered to): <example> and <figure>
- *   7) Dangling filerefs.
- *   8) Unused file assets (warn)
- *   9) resource directories used by more than one XML file (warn)
+ *   7) items that must have ids (and these ids must be referred to): <example> and <figure>
+ *   9) Dangling filerefs.
+ *   9) Unused file assets (warn)
+ *  10) resource directories used by more than one XML file (warn)
  *   
  * @author johnmount
  *

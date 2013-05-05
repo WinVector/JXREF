@@ -3,7 +3,7 @@
 
  Program to check Manning Publications Agile Author XML for some cross
  reference issues (Java based).  Property Win-Vector LLC.  
- Distribuiton license: GPL3 or later.
+ Distribution license: GPL3 or later.
  Hosted at: https://github.com/WinVector/JXREF
 
  Experimental code we
@@ -33,8 +33,11 @@ To Use:
    4) Case confusion between tags
    5) Use of <co id=X> and <callout arrearefs=X> in non-example context ( <example> or <informalexample> )
    6) Non-parallel structure between call-outs <co id=X> and <callout arrearefs=X>
-   7) Dangling filerefs.
-   8) Unused file assets in a directory named "figures" (warn)
+   7) items that must have ids (and these ids must be referred to): <example> and <figure>
+   9) Dangling filerefs.
+   9) Unused file assets (warn)
+  10) resource directories used by more than one XML file (warn)
+
 
   As a final side effect chapter plus level-1 section names are printed.
 
@@ -60,5 +63,6 @@ which produces the files:
    GoodChapter1.xml_external_links.xml
    GoodChapter2.xml_external_links.xml
 
-Each files contains all the defined id's in the book that are not in
-the chapter in question. Look in test/GoodBook for the simple book example.
+Each "_external_links.xml" file contains all the defined id's in the
+book that are not in the chapter in question. Look in test/GoodBook
+for the simple book example.
