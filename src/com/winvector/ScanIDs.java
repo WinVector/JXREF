@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -40,6 +41,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *   9) Dangling filerefs.
  *   9) Unused file assets (warn)
  *  10) resource directories used by more than one XML file (warn)
+ *  11) referring to un-numbered structures (informalexample, formalpara, sect3)
  *   
  * @author johnmount
  *
@@ -52,8 +54,12 @@ public final class ScanIDs {
 	}));
 	
 	public static final Set<String> mustHaveId = new HashSet<String>(Arrays.asList(new String[] {
-		"co", "example", "figure"	
-	}));
+			"co", "example", "figure"	
+		}));
+
+	public static final Set<String> cantReferToId = new HashSet<String>(Arrays.asList(new String[] {
+			"sect3", "informalexample", "formalpara"
+		}));
 
 	
 	private static final class FileRec {
@@ -483,7 +489,9 @@ public final class ScanIDs {
 		totErrors += checkHandler.nErrors;
 		final SortedMap<com.winvector.ScanIDs.CheckHandler.TagRec,String> foundErrors = new TreeMap<com.winvector.ScanIDs.CheckHandler.TagRec,String>();
 		// check for broken/dangling links
-		for(final com.winvector.ScanIDs.CheckHandler.TagRec linkend: checkHandler.idRefToFirstIdRef.values()) {
+		for(final Entry<String, com.winvector.ScanIDs.CheckHandler.TagRec> me: checkHandler.idRefToFirstIdRef.entrySet()) {
+			final String headId = me.getKey();
+			final com.winvector.ScanIDs.CheckHandler.TagRec linkend = me.getValue();
 			final com.winvector.ScanIDs.CheckHandler.TagRec forbidden = checkHandler.cantGloballyRef.get(linkend.id);
 			if(null!=forbidden) {
 				foundErrors.put(linkend,"Error: illegal global ref from " + linkend + " to " + forbidden);
@@ -494,6 +502,11 @@ public final class ScanIDs {
 					foundErrors.put(linkend,"Error: link " + linkend + " broken");
 					++totErrors;
 				} else {
+					final com.winvector.ScanIDs.CheckHandler.TagRec linkhead = checkHandler.idToRec.get(headId);
+					if(cantReferToId.contains(linkhead.tagType)) {
+						foundErrors.put(linkend,"Error: linkend " + linkend + " references a " + linkhead.tagType);
+						++totErrors;							
+					}
 					if(rec.id.compareTo(linkend.id)!=0) {
 						foundErrors.put(linkend,"Error: linkend " + linkend + " confusing casing with " + rec.id);
 						++totErrors;	

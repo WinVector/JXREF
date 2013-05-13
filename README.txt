@@ -37,6 +37,7 @@ To Use:
    9) Dangling filerefs.
    9) Unused file assets (warn)
   10) resource directories used by more than one XML file (warn)
+  11) referring to un-numbered structures (informalexample, formalpara, sect3)
 
 
   As a final side effect chapter plus level-1 section names are printed.
