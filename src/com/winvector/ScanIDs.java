@@ -47,6 +47,9 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  */
 public final class ScanIDs {
+	public static final String IDREGEXP = "^[a-zA-Z][a-zA-Z0-9_:\\-/]*$";
+	public static final Pattern IDPATTERN = Pattern.compile(IDREGEXP);
+
 
 	public static final Set<String> callOutContexts = new HashSet<String>(Arrays.asList(new String[] {
 			"informalexample",
@@ -247,15 +250,8 @@ public final class ScanIDs {
 			if(null==s) {
 				return false;
 			}
-			if(s.length()<1) {
-				return false;
-			}
-			if(!Character.isLetter(s.charAt(0))) {
-				return false;
-			}
-			final Pattern space = Pattern.compile("\\s");
-			final Matcher matcher = space.matcher(s);
-			if(matcher.find()) {
+			final Matcher matcher = IDPATTERN.matcher(s);
+			if(!matcher.find()) {
 				return false;
 			}
 			return true;
@@ -276,7 +272,7 @@ public final class ScanIDs {
 				if(null!=id) {
 					final TagRec idRec = new TagRec(fi,qName,IDFIELD,id);
 					if(!goodID(id)) {
-						System.out.println("Error: " + fi + " tag " + idRec + " bad id (must start with a letter and have no whitespace)");
+						System.out.println("Error: " + fi + " tag " + idRec + " bad id (must match regexp: " +  IDREGEXP + ")");
 						++nErrors;
 					} else {
 						if(idToRec.containsKey(id)) {
