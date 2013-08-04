@@ -89,9 +89,12 @@ public final class ScanIDs {
 	
 
 	public final File workingDir;
+	public final File destDir;
 
 	public ScanIDs(final File workingDir) {
 		this.workingDir = workingDir;
+		destDir = new File(workingDir,"generated");
+		destDir.mkdirs();
 	}
 	
 	
@@ -558,7 +561,7 @@ public final class ScanIDs {
 			if(fi.equalsIgnoreCase(bookFileName)) {
 				continue;
 			}
-			final File resFile = new File(workingDir,fi + ourSuffix);
+			final File resFile = new File(destDir,fi + ourSuffix);
 			//System.out.println("\twriting: " + resFile);
 			final PrintStream p = new PrintStream(resFile);
 			for(final String line: header) {
