@@ -43,6 +43,12 @@ public final class ExampleClipper extends DefaultHandler {
 		return s;
 	}
 	
+	private static String cleanDirComponent(final String o) {
+		String s = o.replaceAll("\\s+"," ").trim();
+		s = s.replaceAll("[^\\w .]+","_");
+		return s;
+	}
+	
 	public static final class ClipZipper implements ClipConsumer {
 		private final ZipOutputStream o;
 		private final String dirName;
@@ -54,7 +60,11 @@ public final class ExampleClipper extends DefaultHandler {
 		
 		@Override
 		public void takeClip(final Clip clip) throws IOException {
-			final ZipEntry e = new ZipEntry(safeFileName(dirName + "/" + clip.chapter + "/" + clip.positionCode + ".txt"));
+			final String safeFileName = safeFileName(dirName 
+					+ "/" + cleanDirComponent(clip.chapter) 
+					+ "/" + cleanDirComponent(clip.positionCode) 
+					+ ".txt");
+			final ZipEntry e = new ZipEntry(safeFileName);
 			o.putNextEntry(e);
 			final byte[] data = clip.toString().getBytes("UTF-8");
 		    o.write(data, 0, data.length);
