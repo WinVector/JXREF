@@ -1,6 +1,7 @@
 package com.winvector;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipOutputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -25,6 +27,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import com.winvector.ExampleClipper.ClipConsumer;
+import com.winvector.ExampleClipper.ClipZipper;
 
 /**
  * For each file name in book.xml create file with all of the cross-references defined from other files, append with _external_links.xml
@@ -42,6 +47,10 @@ import org.xml.sax.helpers.DefaultHandler;
  *   9) Unused file assets (warn)
  *  10) resource directories used by more than one XML file (warn)
  *  11) referring to un-numbered structures (informalexample, formalpara, sect3)
+ *  
+ *  And generate a directory tree of code extracts.
+ *  
+ *  Note: all of the extract process and results assume correctly formatted XML for proper operations.
  *   
  * @author johnmount
  *
@@ -99,8 +108,13 @@ public final class ScanIDs {
 	
 	
 	private static final class OutlineHandler extends DefaultHandler {
+		private final ExampleClipper exampleClipper;
 		private LinkedList<String> tagStack = new LinkedList<String>();
 		private StringBuilder titleBuf = null;
+		
+		public OutlineHandler(final ClipConsumer clipConsumer) {
+			exampleClipper = new ExampleClipper(clipConsumer);
+		}
 
 		@Override
 		public void startElement(final String uri, 
@@ -110,6 +124,7 @@ public final class ScanIDs {
 				titleBuf = new StringBuilder();
 			}
 			tagStack.addLast(qName);
+			exampleClipper.startElement(uri, localName, qName, attributes);
 		}
 		
 		@Override
@@ -117,6 +132,7 @@ public final class ScanIDs {
                 final int start,
                 final int length)
                 throws SAXException {
+			exampleClipper.characters(ch, start, length);
 			if(null!=titleBuf) {
 				for(int i=start;i<start+length;++i) {
 					titleBuf.append(ch[i]);
@@ -130,6 +146,7 @@ public final class ScanIDs {
                 final String qName)
                 throws SAXException {
 			tagStack.removeLast();
+			exampleClipper.endElement(uri, localName, qName);
 			if(null!=titleBuf) {
 				if((!tagStack.isEmpty())) {
 					final String prevElt = tagStack.getLast();
@@ -432,7 +449,7 @@ public final class ScanIDs {
 		}
 	}
 	
-	public int doWork() throws IOException, ParserConfigurationException, SAXException {
+	public int doWork(final String zipName) throws IOException, ParserConfigurationException, SAXException {
 		System.out.println("working in: " + workingDir.getAbsolutePath());
 		final String ourSuffix = "_external_links.xml";
 		final SAXParserFactory saxFactory = SAXParserFactory.newInstance();
@@ -456,13 +473,18 @@ public final class ScanIDs {
 				}
 			}			
 		});
-		{ // scan for chapter and sect 1 structure
+		{ // scan for chapter and sect 1 structure, and zip up examples
+			final File of = new File(zipName + ".zip");
+			System.out.println("writing: " + of.getAbsolutePath());
+			final ZipOutputStream o = new ZipOutputStream(new FileOutputStream(of));
+			final ClipConsumer clipConsumer = new ClipZipper(o,zipName);
 			for(final String fi: fileNameList) {
 				final File f = new File(workingDir,fi);
 				//System.out.println("\treading: " + fi + "\t" + f);
-				final OutlineHandler dataHandler = new OutlineHandler();
+				final OutlineHandler dataHandler = new OutlineHandler(clipConsumer);
 				saxParser.parse(f,dataHandler);
-			}			
+			}
+			o.close();
 		}
 		fileNameList.add(bookFileName);
 		int totErrors = 0;
@@ -588,7 +610,8 @@ public final class ScanIDs {
 	public static void main(final String[] args) throws Exception {
 		final File workingDir = new File(".");
 		final ScanIDs scanner = new ScanIDs(workingDir);
-		final int totErrors = scanner.doWork();
+		String zipName = "CodeExamples";
+		final int totErrors = scanner.doWork(zipName);
 		if(totErrors>0) {
 			System.exit(1);
 		}

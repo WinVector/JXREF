@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://www.manning.com/schemas/book manning-book.xsd"
+ xmlns="http://www.manning.com/schemas/book"
+ xmlns:xi="http://www.w3.org/2001/XInclude"
+ xmlns:ns="http://www.manning.com/schemas/book"
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ id="Z"
+ label="Z"
+ xreflabel="Z">
+    <title id="ZZ">Appendix Z: test</title>
+    				<informalexample>
+					<programlisting>
+&gt; x &lt;- 2
+&gt; x &lt; - 3
+[1] FALSE
+&gt; print(x)
+[1] 2
+					</programlisting>
+				</informalexample>
+				<example id="exRJDBC" annotations="below">
+					<title>Reading database data into R</title>
+					<programlisting>
+> install.packages('RJDBC')  <co id="installPackage"/>
+> library('RJDBC') <co id="loadLibrary"/>
+> drv &lt;- JDBC("org.h2.Driver","h2-1.3.170.jar",identifier.quote="'") <co id="jdbcDriver"/>
+> conn &lt;- dbConnect(drv,"jdbc:h2://h2demodb_h2","u","u") <co id="dbConnection"/>
+> d &lt;- dbGetQuery(conn,"SELECT * FROM example_table") <co id="runSelect"/>
+> print(d)  <co id="printDataframe"/>
+  STATUSID NAME
+1        1  Joe
+2        2 Fred       <co id="resultData"/>
+                </programlisting>
+					<calloutlist>
+						<callout arearefs="installPackage">Install the RJDBC package from the CRAN
+							package repository.</callout>
+						<callout arearefs="loadLibrary">Load the RJDBC library.</callout>
+						<callout arearefs="jdbcDriver">Use the RJDBC library to build a database
+							driver.</callout>
+						<callout arearefs="dbConnection">Use the database driver to build a database
+							connection.</callout>
+						<callout arearefs="runSelect">Run a select SQL query using the database
+							connection to populate a dataframe.</callout>
+						<callout arearefs="printDataframe">Print the result dataframe.</callout>
+						<callout arearefs="resultData">The database table as an R
+							dataframe.</callout>
+					</calloutlist>
+				</example>
+</chapter>
