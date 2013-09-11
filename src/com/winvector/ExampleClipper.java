@@ -1,6 +1,9 @@
 package com.winvector;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -52,6 +55,10 @@ public final class ExampleClipper extends DefaultHandler {
 	public static final class ClipZipper implements ClipConsumer {
 		private final ZipOutputStream o;
 		private final String dirName;
+		private final NumberFormat clipNF = new DecimalFormat("00000000");
+		private final NumberFormat chapNF = new DecimalFormat("00");
+		private final Map<String,Integer> chNumbers = new HashMap<String,Integer>();
+		private int clipNumber = 0;
 		
 		public ClipZipper(final ZipOutputStream o, final String dirName) {
 			this.o = o;
@@ -60,9 +67,15 @@ public final class ExampleClipper extends DefaultHandler {
 		
 		@Override
 		public void takeClip(final Clip clip) throws IOException {
+			++clipNumber;
+			Integer chNumber = chNumbers.get(clip.chapter);
+			if(null==chNumber) {
+				chNumber = chNumbers.size() + 1;
+				chNumbers.put(clip.chapter,chNumber);
+			}
 			final String safeFileName = safeFileName(dirName 
-					+ "/" + cleanDirComponent(clip.chapter) 
-					+ "/" + cleanDirComponent(clip.positionCode) 
+					+ "/" + cleanDirComponent(chapNF.format(chNumber) + "_" + clip.chapter) 
+					+ "/" + cleanDirComponent(clipNF.format(clipNumber) + "_" + clip.positionCode) 
 					+ ".txt");
 			final ZipEntry e = new ZipEntry(safeFileName);
 			o.putNextEntry(e);
