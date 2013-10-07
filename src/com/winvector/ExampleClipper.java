@@ -3,6 +3,7 @@ package com.winvector;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -20,7 +21,8 @@ public final class ExampleClipper extends DefaultHandler {
 		public String positionCode;
 		public String positionDescription;
 		public String clipTitle;
-		public String clip;
+		public String progText;
+		public ArrayList<String> calloutText;
 		
 		@Override
 		public String toString() {
@@ -31,7 +33,16 @@ public final class ExampleClipper extends DefaultHandler {
 			if((null!=clipTitle)&&(clipTitle.trim().length()>0)) {
 				b.append(clipTitle + "\n");
 			}
-			b.append(clip + "\n");
+			b.append(progText + "\n");
+			if(null!=calloutText) {
+				for(int i=0;i<calloutText.size();++i) {
+					b.append("\n");
+					b.append("# Note " + (i+1) + ":" + "\n#   ");
+					final String ci = calloutText.get(i);
+					b.append(ci.replaceAll("[ \t]+"," ").replaceAll("[\n\r]+","\n#  "));
+					b.append("\n");
+				}
+			}
 			return b.toString();
 		}
 	}
@@ -93,6 +104,7 @@ public final class ExampleClipper extends DefaultHandler {
 	private final String[] sectList = { CHAPTER, "sect1", "sect2" };
 	private final String[] blocks = { EXAMPLE, "informalexample" };
 	private final ClipConsumer clipConsumer;
+	private boolean takeCallouts = true;
 	// state
 	private final LinkedList<String> tagStack = new LinkedList<String>();
 	private String chapterNumber = "";
@@ -102,7 +114,9 @@ public final class ExampleClipper extends DefaultHandler {
 	private final Map<String,Integer> blockCounts = new TreeMap<String,Integer>();
 	private StringBuilder chars = null;
 	private String titleText = null;
+	private int nCallouts = 0;
 	private String progText = null;
+	private ArrayList<String> calloutText = null;
 	private String progTitle = null;
 
 	
@@ -143,7 +157,21 @@ public final class ExampleClipper extends DefaultHandler {
 			chars = new StringBuilder();
 		} else if(qName.equals(PROGRAMLISTING)) {
 			progText = null;
+			calloutText = null;
+			nCallouts = 0;
 			chars = new StringBuilder();
+		} else if(qName.equals("calloutlist")) {
+			calloutText = new ArrayList<String>();
+		}
+		if(takeCallouts) {
+			if(qName.equals("co")) {
+				if(null!=chars) {
+					++nCallouts;
+					chars.append("\t# Note: " + nCallouts);
+				}
+			} else if(qName.equals("callout")) {
+				chars = new StringBuilder();
+			}
 		}
 		if((depth<sectList.length)&&(sectList[depth].equals(qName))) {
 			count[depth] += 1;
@@ -179,6 +207,9 @@ public final class ExampleClipper extends DefaultHandler {
 		} else if(qName.equals(PROGRAMLISTING)) {
 			progText = chars.toString();
 			chars = null;
+		} else if(qName.equals("callout")) {
+			calloutText.add(chars.toString());
+			chars = null;
 		}
 		tagStack.removeLast();
 		if(depth>0) {
@@ -199,7 +230,8 @@ public final class ExampleClipper extends DefaultHandler {
 						clip.positionCode = curPositionCode() + " " + qName + " " + (oc+1);
 						clip.positionDescription = curPositionDescription() + " " + qName + " " + (oc+1);
 						clip.clipTitle = progTitle;
-						clip.clip = progText;
+						clip.progText = progText;
+						clip.calloutText = calloutText;
 						if(null!=clipConsumer) {
 							try {
 								clipConsumer.takeClip(clip);
@@ -223,6 +255,8 @@ public final class ExampleClipper extends DefaultHandler {
 			titleText = null;
 			progTitle = null;
 			progText = null;
+			calloutText = null;
+			nCallouts = 0;
 		}
 	}
 }
