@@ -295,6 +295,9 @@ public final class ScanIDs {
 						System.out.println("Error: " + fi + " tag " + idRec + " bad id (must match regexp: " +  IDREGEXP + ")");
 						++nErrors;
 					} else {
+						if(cantReferToId.contains(qName)) {
+							System.out.println("Warning unrefferable " + fi + " tag " + idRec + " has an ID");
+						}
 						if(idToRec.containsKey(id)) {
 							System.out.println("Error: " + fi + " tag " + idRec + " duplicates tag " + idToRec.get(id));
 							++nErrors;
