@@ -16,7 +16,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public final class ExampleClipper extends DefaultHandler {
-	public static final class Clip {
+
+	
+	public final class Clip {
 		public String chapter;
 		public String positionCode;
 		public String positionDescription;
@@ -27,20 +29,20 @@ public final class ExampleClipper extends DefaultHandler {
 		@Override
 		public String toString() {
 			final StringBuilder b = new StringBuilder();
-			//b.append(chapter + "\n");
-			b.append(positionCode + "\n");
-			b.append(positionDescription + "\n");
+			//b.append(chapter + lineBreak);
+			b.append(positionCode + lineBreak);
+			b.append(positionDescription + lineBreak);
 			if((null!=clipTitle)&&(clipTitle.trim().length()>0)) {
-				b.append(clipTitle + "\n");
+				b.append(clipTitle + lineBreak);
 			}
-			b.append(progText + "\n");
+			b.append(progText + lineBreak);
 			if(null!=calloutText) {
 				for(int i=0;i<calloutText.size();++i) {
-					b.append("\n");
-					b.append("# Note " + (i+1) + ":" + "\n#   ");
+					b.append(lineBreak);
+					b.append(openComment + " Note " + (i+1) + ": " + closeComment + lineBreak + openComment + "   ");
 					final String ci = calloutText.get(i);
-					b.append(ci.replaceAll("[ \t]+"," ").replaceAll("[\n\r]+","\n#  "));
-					b.append("\n");
+					b.append(ci.replaceAll("[ \t]+"," ").replaceAll("[\n\r]+"," " + closeComment + lineBreak + openComment + "  "));
+					b.append(" " + closeComment + lineBreak);
 				}
 			}
 			return b.toString();
@@ -97,6 +99,10 @@ public final class ExampleClipper extends DefaultHandler {
 	}
 
 	// config
+	public boolean takeCallouts = true;
+	public String openComment = "#";
+	public String closeComment = "";
+	public String lineBreak = "\n";
 	private static final String CHAPTER = "chapter";
 	private static final String TITLE = "title";
 	private static final String PROGRAMLISTING = "programlisting";
@@ -104,7 +110,6 @@ public final class ExampleClipper extends DefaultHandler {
 	private final String[] sectList = { CHAPTER, "sect1", "sect2" };
 	private final String[] blocks = { EXAMPLE, "informalexample" };
 	private final ClipConsumer clipConsumer;
-	private boolean takeCallouts = true;
 	// state
 	private final LinkedList<String> tagStack = new LinkedList<String>();
 	private String chapterNumber = "";
@@ -167,7 +172,7 @@ public final class ExampleClipper extends DefaultHandler {
 			if(qName.equals("co")) {
 				if(null!=chars) {
 					++nCallouts;
-					chars.append("\t# Note: " + nCallouts);
+					chars.append("\t" + openComment + " Note: " + nCallouts + " " + closeComment);
 				}
 			} else if(qName.equals("callout")) {
 				chars = new StringBuilder();

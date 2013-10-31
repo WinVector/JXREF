@@ -51,6 +51,10 @@ import com.winvector.ExampleClipper.ClipZipper;
  *  And generate a directory tree of code extracts.
  *  
  *  Note: all of the extract process and results assume correctly formatted XML for proper operations.
+ *  
+ *  Right now hard-wired to R style comments ( hash)
+ *  TODO: expose comments style and options as controls.
+ *  TODO: use derived numbering on all cross-refs
  *   
  * @author johnmount
  *
@@ -99,6 +103,7 @@ public final class ScanIDs {
 
 	public final File workingDir;
 	public final File destDir;
+	public boolean takeCallouts = true; // TODO: expose this as a control
 
 	public ScanIDs(final File workingDir) {
 		this.workingDir = workingDir;
@@ -107,13 +112,14 @@ public final class ScanIDs {
 	}
 	
 	
-	private static final class OutlineHandler extends DefaultHandler {
+	private final class OutlineHandler extends DefaultHandler {
 		private final ExampleClipper exampleClipper;
 		private LinkedList<String> tagStack = new LinkedList<String>();
 		private StringBuilder titleBuf = null;
 		
 		public OutlineHandler(final ClipConsumer clipConsumer) {
 			exampleClipper = new ExampleClipper(clipConsumer);
+			exampleClipper.takeCallouts = takeCallouts;
 		}
 
 		@Override
