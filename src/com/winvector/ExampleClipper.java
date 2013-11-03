@@ -4,10 +4,11 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -30,10 +31,10 @@ public final class ExampleClipper extends DefaultHandler {
 		public String toString() {
 			final StringBuilder b = new StringBuilder();
 			//b.append(chapter + lineBreak);
-			b.append(positionCode + lineBreak);
-			b.append(positionDescription + lineBreak);
+			b.append(openComment + " " + positionCode + " " + closeComment + lineBreak);
+			b.append(openComment + " " + positionDescription + " " + closeComment + lineBreak);
 			if((null!=clipTitle)&&(clipTitle.trim().length()>0)) {
-				b.append(clipTitle + lineBreak);
+				b.append(openComment + " " + clipTitle  + " " + closeComment + lineBreak);
 			}
 			b.append(progText + lineBreak);
 			if(null!=calloutText) {
@@ -60,15 +61,15 @@ public final class ExampleClipper extends DefaultHandler {
 	}
 	
 	private static String cleanDirComponent(final String o) {
-		String s = o.replaceAll("\\s+"," ").trim();
-		s = s.replaceAll("[^\\w .]+","_");
+		String s = o.replaceAll("\\s+"," ").trim().replace(' ','_');
+		s = s.replaceAll("[^\\w.]+","_");
 		return s;
 	}
 	
 	public static final class ClipZipper implements ClipConsumer {
 		private final ZipOutputStream o;
 		private final String dirName;
-		private final NumberFormat clipNF = new DecimalFormat("00000000");
+		private final NumberFormat clipNF = new DecimalFormat("00000");
 		private final NumberFormat chapNF = new DecimalFormat("00");
 		private final Map<String,Integer> chNumbers = new HashMap<String,Integer>();
 		private int clipNumber = 0;
@@ -103,22 +104,13 @@ public final class ExampleClipper extends DefaultHandler {
 	public String openComment = "#";
 	public String closeComment = "";
 	public String lineBreak = "\n";
-	private static final String CHAPTER = "chapter";
-	private static final String TITLE = "title";
 	private static final String PROGRAMLISTING = "programlisting";
 	private static final String EXAMPLE = "example";
-	private final String[] sectList = { CHAPTER, "sect1", "sect2" };
-	private final String[] blocks = { EXAMPLE, "informalexample" };
+	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { EXAMPLE, "informalexample" }));
 	private final ClipConsumer clipConsumer;
 	// state
-	private final LinkedList<String> tagStack = new LinkedList<String>();
-	private String chapterNumber = "";
-	private final int[] count = new int[sectList.length];
-	private final String[] name = new String[sectList.length];
-	private int depth = 0;
-	private final Map<String,Integer> blockCounts = new TreeMap<String,Integer>();
+	private final ItemLabeler itemLabeler = new ItemLabeler();
 	private StringBuilder chars = null;
-	private String titleText = null;
 	private int nCallouts = 0;
 	private String progText = null;
 	private ArrayList<String> calloutText = null;
@@ -127,40 +119,15 @@ public final class ExampleClipper extends DefaultHandler {
 	
 	public ExampleClipper(final ClipConsumer clipConsumer) {
 		this.clipConsumer = clipConsumer;
-		for(final String b: blocks) {
-			blockCounts.put(b,0);
-		}
 	}
 	
-	
-	private String curPositionCode() {
-		final StringBuilder b = new StringBuilder();
-		b.append(chapterNumber);
-		for(int i=1;i<depth;++i) {
-			b.append("." + count[i]);
-		}
-		return b.toString();
-	}
-	
-	private String curPositionDescription() {
-		final StringBuilder b = new StringBuilder();
-		b.append(name[0]);
-		for(int i=1;i<depth;++i) {
-			b.append(" : " + name[i]);
-		}
-		return b.toString();
-	}
 	
 	@Override
 	public void startElement(final String uri, 
 			final String localName, final String qName, 
 			final Attributes attributes) throws SAXException {
-		if(qName.equals(CHAPTER)) {
-			chapterNumber = attributes.getValue("xreflabel");
-		} else 	if(qName.equals(TITLE)) {
-			titleText = null;
-			chars = new StringBuilder();
-		} else if(qName.equals(PROGRAMLISTING)) {
+		itemLabeler.startElement(uri, localName, qName, attributes);
+		if(qName.equals(PROGRAMLISTING)) {
 			progText = null;
 			calloutText = null;
 			nCallouts = 0;
@@ -178,15 +145,6 @@ public final class ExampleClipper extends DefaultHandler {
 				chars = new StringBuilder();
 			}
 		}
-		if((depth<sectList.length)&&(sectList[depth].equals(qName))) {
-			count[depth] += 1;
-			for(int i=depth+1;i<count.length;++i) {
-				count[i] = 0;
-			}
-			name[depth] = null;
-			++depth;
-		}
-		tagStack.addLast(qName);
 	}
 	
 	@Override
@@ -194,6 +152,7 @@ public final class ExampleClipper extends DefaultHandler {
             final int start,
             final int length)
             throws SAXException {
+		itemLabeler.characters(ch, start, length);
 		if(null!=chars) {
 			for(int i=start;i<start+length;++i) {
 				chars.append(ch[i]);
@@ -206,62 +165,31 @@ public final class ExampleClipper extends DefaultHandler {
             final String localName,
             final String qName)
             throws SAXException {
-		if(qName.equals(TITLE)) {
-			titleText = chars.toString();
-			chars = null;
-		} else if(qName.equals(PROGRAMLISTING)) {
+		itemLabeler.endElement(uri, localName, qName);
+		if(qName.equals(PROGRAMLISTING)) {
 			progText = chars.toString();
 			chars = null;
 		} else if(qName.equals("callout")) {
 			calloutText.add(chars.toString());
 			chars = null;
 		}
-		tagStack.removeLast();
-		if(depth>0) {
-			if(TITLE.equals(qName)) { 
-				if(null==name[depth-1]) {  // waiting on a section title
-					name[depth-1] = titleText;
-				} else {
-					if((!tagStack.isEmpty())&&(EXAMPLE.equals(tagStack.getLast()))) {
-						progTitle = titleText;
+		if(blocks.contains(qName)) {
+			if((null!=progText)&&(progText.trim().length()>0)) {
+				final Clip clip = new Clip();
+				clip.chapter = itemLabeler.chapterName();
+				clip.positionCode = itemLabeler.curPositionCode(qName);
+				clip.positionDescription = itemLabeler.curPositionDescription(qName);
+				clip.clipTitle = progTitle;
+				clip.progText = progText;
+				clip.calloutText = calloutText;
+				if(null!=clipConsumer) {
+					try {
+						clipConsumer.takeClip(clip);
+					} catch (IOException e) {
+						throw new SAXException("caught: " + e);
 					}
 				}
-			} else {
-				final Integer oc = blockCounts.get(qName);
-				if(null!=oc) {
-					if((null!=progText)&&(progText.trim().length()>0)) {
-						final Clip clip = new Clip();
-						clip.chapter = name[0];
-						clip.positionCode = curPositionCode() + " " + qName + " " + (oc+1);
-						clip.positionDescription = curPositionDescription() + " " + qName + " " + (oc+1);
-						clip.clipTitle = progTitle;
-						clip.progText = progText;
-						clip.calloutText = calloutText;
-						if(null!=clipConsumer) {
-							try {
-								clipConsumer.takeClip(clip);
-							} catch (IOException e) {
-								throw new SAXException("caught: " + e);
-							}
-						}
-					}
-					blockCounts.put(qName,oc+1);
-				}
 			}
-			if(sectList[depth-1].equals(qName)) {
-				--depth;
-			}
-		}
-		// prevent leaks on ill-formed XML
-		if(TITLE.equals(qName)) { 
-			titleText = null;
-		}
-		if(blockCounts.containsKey(qName)) {
-			titleText = null;
-			progTitle = null;
-			progText = null;
-			calloutText = null;
-			nCallouts = 0;
 		}
 	}
 }
