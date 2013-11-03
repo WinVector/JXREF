@@ -9,7 +9,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Ugly little state machine to track item numbering
+ * Ugly little state machine to track item numbering.
+ * Users must call startElement(), endElement() and characters()
  * @author johnmount
  *
  */
@@ -45,8 +46,12 @@ public final class ItemLabeler extends DefaultHandler {
 	
 	public String curPositionCode(final String qName) {
 		final StringBuilder b = new StringBuilder();
+		b.append(qName);
 		final String posKey = posKey(qName);
-		b.append(qName + ":" + blockCounts.get(posKey));
+		final Integer bc = blockCounts.get(posKey);
+		if(null!=bc) {
+			b.append(":" + bc);
+		}
 		b.append("_" + chapterNumber);
 		for(int i=1;i<depth;++i) {
 			b.append("." + count[i]);
@@ -56,8 +61,12 @@ public final class ItemLabeler extends DefaultHandler {
 	
 	public String curPositionDescription(final String qName) {
 		final StringBuilder b = new StringBuilder();
+		b.append(qName);
 		final String posKey = posKey(qName);
-		b.append(qName + ":" + blockCounts.get(posKey));
+		final Integer bc = blockCounts.get(posKey);
+		if(null!=bc) {
+			b.append(":" + bc);
+		}
 		for(int i=0;i<depth;++i) {
 			b.append(" : " + name[i]);
 		}

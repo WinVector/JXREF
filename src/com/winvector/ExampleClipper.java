@@ -16,6 +16,12 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+/**
+ * State machine to extract program listings and callouts.
+ * Users must call startElement(), endElement() and characters()
+ * @author johnmount
+ *
+ */
 public final class ExampleClipper extends DefaultHandler {
 
 	

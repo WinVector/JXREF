@@ -54,7 +54,6 @@ import com.winvector.ExampleClipper.ClipZipper;
  *  
  *  Right now hard-wired to R style comments ( hash)
  *  TODO: expose comments style and options as controls.
- *  TODO: use derived numbering on all cross-refs
  *   
  * @author johnmount
  *
@@ -172,12 +171,14 @@ public final class ScanIDs {
 		public String fi = null;
 		public int nErrors = 0;
 		public Locator locator = null;
+		public ItemLabeler itemLabeler = null;
 		
 		public final class TagRec implements Comparable<TagRec> {
 			public final String fileName;
 			public final String tagType;
 			public final String fieldType;
 			public final String id;
+			public final String label;
 			public final int lineNum;
 			public final int colNum;
 			
@@ -186,6 +187,7 @@ public final class ScanIDs {
 				this.tagType = tagType;
 				this.fieldType = fieldType;
 				this.id = id;
+				label = itemLabeler.curPositionCode(tagType);
 				lineNum = locator.getLineNumber();
 				colNum = locator.getColumnNumber();
 			}
@@ -265,6 +267,7 @@ public final class ScanIDs {
 			this.fi = fi;
 			knownCallOuts = null;
 			perXMLResourceDirs.clear();
+			itemLabeler = new ItemLabeler();
 		}
 		
 		@Override
@@ -287,6 +290,7 @@ public final class ScanIDs {
 		public void startElement(final String uri, 
 				final String localName, final String qName, 
 				final Attributes attributes) throws SAXException {
+			itemLabeler.startElement(uri, localName, qName, attributes);
 			if(callOutContexts.contains(qName)) {
 				knownCallOuts = new TreeSet<String>(compareIgnoreCase);
 				callOutsMarks = new ArrayList<TagRec>();
@@ -415,7 +419,16 @@ public final class ScanIDs {
 		}
 		
 		@Override
+		public void characters(final char[] ch,
+	            final int start,
+	            final int length)
+	            throws SAXException {
+			itemLabeler.characters(ch, start, length);
+		}
+		
+		@Override
 		public void endElement(final String uri, final String localName, final String qName) throws SAXException {
+			itemLabeler.endElement(uri, localName, qName);
 			if(callOutContexts.contains(qName)) {
 				// confirm parallel structure
 				final int n = callOutsMarks.size();
@@ -600,7 +613,7 @@ public final class ScanIDs {
 			}
 			for(final com.winvector.ScanIDs.CheckHandler.TagRec idRec: checkHandler.idToRec.values()) {
 				if(idRec.fileName.compareToIgnoreCase(fi)!=0) {
-					p.println("	<para id=\"" + idRec.id + "\" xreflabel=\"XRF:" + idRec.tagType + ":" + idRec.id + "\" />");
+					p.println("	<para id=\"" + idRec.id + "\" xreflabel=\"XRF:" + idRec.label + ":" + idRec.id + "\" />");
 				}
 			}
 			for(final String line: footer) {
