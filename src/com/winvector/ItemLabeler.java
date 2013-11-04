@@ -1,8 +1,12 @@
 package com.winvector;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -16,14 +20,18 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public final class ItemLabeler extends DefaultHandler {
 	// config
-	private static final String CHAPTER = "chapter";
 	private static final String TITLE = "title";
-	private final String[] sectList = { CHAPTER, "sect1", "sect2" };
+	private final ArrayList<Set<String>> sectList = new ArrayList<Set<String>>();
+	{
+		sectList.add(new TreeSet<String>(Arrays.asList(new String[] {"chapter", "part", "appendix"})));
+		sectList.add(new TreeSet<String>(Arrays.asList(new String[] {"sect1"})));
+		sectList.add(new TreeSet<String>(Arrays.asList(new String[] {"sect2"})));
+	}
 	// state
 	private final LinkedList<String> tagStack = new LinkedList<String>();
 	private String chapterNumber = "";
-	private final int[] count = new int[sectList.length];
-	private final String[] name = new String[sectList.length];
+	private final int[] count = new int[sectList.size()];
+	private final String[] name = new String[sectList.size()];
 	private int depth = 0;
 	private final Map<String,Integer> blockCounts = new TreeMap<String,Integer>();
 	private StringBuilder chars = null;
@@ -77,13 +85,13 @@ public final class ItemLabeler extends DefaultHandler {
 	public void startElement(final String uri, 
 			final String localName, final String qName, 
 			final Attributes attributes) throws SAXException {
-		if(qName.equals(CHAPTER)) {
+		if(sectList.get(0).contains(qName)) {
 			chapterNumber = attributes.getValue("xreflabel");
 		} else 	if(qName.equals(TITLE)) {
 			titleText = null;
 			chars = new StringBuilder();
 		}
-		if((depth<sectList.length)&&(sectList[depth].equals(qName))) {
+		if((depth<sectList.size())&&(sectList.get(depth).contains(qName))) {
 			count[depth] += 1;
 			for(int i=depth+1;i<count.length;++i) {
 				count[i] = 0;
@@ -129,7 +137,7 @@ public final class ItemLabeler extends DefaultHandler {
 				}
 				blockCounts.put(posKey,oc+1);
 			}
-			if(sectList[depth-1].equals(qName)) {
+			if(sectList.get(depth-1).contains(qName)) {
 				--depth;
 			}
 		}

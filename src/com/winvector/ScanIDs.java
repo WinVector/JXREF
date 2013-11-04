@@ -114,6 +114,7 @@ public final class ScanIDs {
 	
 	
 	private final class OutlineHandler extends DefaultHandler {
+		private final Set<String> targets = new TreeSet<String>(Arrays.asList(new String[] {"chapter", "part", "appendix", "sect1"}));
 		private final ExampleClipper exampleClipper;
 		private LinkedList<String> tagStack = new LinkedList<String>();
 		private StringBuilder titleBuf = null;
@@ -156,7 +157,7 @@ public final class ScanIDs {
 			if(null!=titleBuf) {
 				if((!tagStack.isEmpty())) {
 					final String prevElt = tagStack.getLast();
-					if(prevElt.equals("chapter")||prevElt.equals("sect1")) {
+					if(targets.contains(prevElt)) {
 						for(int i=0;i<tagStack.size();++i) {
 							System.out.print("\t");
 						}
