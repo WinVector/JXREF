@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,7 +33,7 @@ import com.winvector.ExampleClipper.ClipConsumer;
 import com.winvector.ExampleClipper.ClipZipper;
 
 /**
- * For each file name in book.xml create file with all of the cross-references defined from other files, append with _external_links.xml
+ * For each file name in book.xml create file with all of the cross-references defined from other files (including those included through parts), append with _external_links.xml
  * the strategy is to get all possible external refs by add a line of XML like: 	<xi:include href="X_external_links.xml"/>
  * 
  * Also check for a number of errors:
@@ -100,6 +101,7 @@ public final class ScanIDs {
 	};
 	
 
+	public final String ourSuffix = "_external_links.xml";
 	public final File workingDir;
 	public final File destDir;
 	public boolean takeCallouts = true; // TODO: expose this as a control
@@ -151,7 +153,6 @@ public final class ScanIDs {
                 final String qName)
                 throws SAXException {
 			tagStack.removeLast();
-			exampleClipper.endElement(uri, localName, qName);
 			if(null!=titleBuf) {
 				if((!tagStack.isEmpty())) {
 					final String prevElt = tagStack.getLast();
@@ -159,11 +160,12 @@ public final class ScanIDs {
 						for(int i=0;i<tagStack.size();++i) {
 							System.out.print("\t");
 						}
-						System.out.println(titleBuf.toString());
+						System.out.println(exampleClipper.itemLabeler.curPositionCode(tagStack.getLast()) + "\t" + titleBuf.toString());
 					}
 				}
 				titleBuf = null;
 			}
+			exampleClipper.endElement(uri, localName, qName);
 		}
 	}
 		
@@ -471,49 +473,71 @@ public final class ScanIDs {
 		}
 	}
 	
+	private ArrayList<String> getXMLIncludes(final SAXParser saxParser, final String xmlFileName) throws SAXException, IOException {
+		final ArrayList<String> fileNameList = new ArrayList<String>();
+		final File xmlFile = new File(workingDir,xmlFileName);
+		if(xmlFile.exists()) {
+			System.out.println("reading:\t" + xmlFile.getAbsolutePath());
+			saxParser.parse(xmlFile, new DefaultHandler() {
+				@Override
+				public void startElement(final String uri, 
+						final String localName, final String qName, 
+						final Attributes attributes) throws SAXException {
+					if("xi:include".compareTo(qName)==0) {
+						final String href = attributes.getValue("href");
+						if((null!=href)&&(href.length()>0)&&
+								(href.endsWith(".xml"))&&(!href.endsWith(ourSuffix))&&(!xmlFileName.equalsIgnoreCase(href))) {
+							fileNameList.add(href);
+						}
+					}
+				}			
+			});
+		}
+		return fileNameList;
+	}
+	
+	private void getXMLIncludesAndCounts(final SAXParser saxParser, final String xmlFileName, final LinkedHashMap<String,Integer> counts) throws SAXException, IOException {
+		if(!counts.containsKey(xmlFileName)) {
+			final ArrayList<String> incs = getXMLIncludes(saxParser,xmlFileName);
+			counts.put(xmlFileName,incs.size());
+			for(final String fi: incs) {
+				if(!counts.containsKey(fi)) {
+					getXMLIncludesAndCounts(saxParser,fi,counts);
+				}
+			}
+		}
+	}
+	
 	public int doWork(final String zipName) throws IOException, ParserConfigurationException, SAXException {
 		System.out.println("working in: " + workingDir.getAbsolutePath());
-		final String ourSuffix = "_external_links.xml";
 		final SAXParserFactory saxFactory = SAXParserFactory.newInstance();
 		final SAXParser saxParser = saxFactory.newSAXParser();
-		final ArrayList<String> fileNameList = new ArrayList<String>();
 		final String bookFileName = "book.xml";
-		final File bookFile = new File(workingDir,bookFileName);
-		System.out.println("reading:\t" + bookFileName + "\t" + bookFile);
-		System.out.println("\treading referenced content");
-		saxParser.parse(bookFile, new DefaultHandler() {
-			@Override
-			public void startElement(final String uri, 
-					final String localName, final String qName, 
-					final Attributes attributes) throws SAXException {
-				if("xi:include".compareTo(qName)==0) {
-					final String href = attributes.getValue("href");
-					if((null!=href)&&(href.length()>0)&&
-							(href.endsWith(".xml"))&&(!href.endsWith(ourSuffix))&&(!bookFileName.equalsIgnoreCase(href))) {
-						fileNameList.add(href);
-					}
-				}
-			}			
-		});
+		final LinkedHashMap<String,Integer> xmlIncCounts = new LinkedHashMap<String,Integer>();
+		getXMLIncludesAndCounts(saxParser,bookFileName,xmlIncCounts);
+
 		{ // scan for chapter and sect 1 structure, and zip up examples
 			final File of = new File(zipName + ".zip");
 			System.out.println("writing: " + of.getAbsolutePath());
 			final ZipOutputStream o = new ZipOutputStream(new FileOutputStream(of));
 			final ClipConsumer clipConsumer = new ClipZipper(o,zipName);
-			for(final String fi: fileNameList) {
-				final File f = new File(workingDir,fi);
-				//System.out.println("\treading: " + fi + "\t" + f);
-				final OutlineHandler dataHandler = new OutlineHandler(clipConsumer);
-				saxParser.parse(f,dataHandler);
+			for(final Entry<String, Integer> me: xmlIncCounts.entrySet()) {
+				final String fi = me.getKey();
+				final int count = me.getValue();
+				if(count<=0) {
+					final File f = new File(workingDir,fi);
+					//System.out.println("\treading: " + fi + "\t" + f);
+					final OutlineHandler dataHandler = new OutlineHandler(clipConsumer);
+					saxParser.parse(f,dataHandler);
+				}
 			}
 			o.close();
 		}
-		fileNameList.add(bookFileName);
 		int totErrors = 0;
 		final CheckHandler checkHandler = new CheckHandler();
 		final Map<String,String> resourceDirToXML = new TreeMap<String,String>();
 		{ // scan all files for tags
-			for(final String fi: fileNameList) {
+			for(final String fi: xmlIncCounts.keySet()) {
 				final File f = new File(workingDir,fi);
 				//System.out.println("\treading: " + fi + "\t" + f);
 				checkHandler.startXMLFile(fi);
@@ -579,7 +603,7 @@ public final class ScanIDs {
 				filesSeen.remove(f.f);
 			}
 		}
-		for(final String fi: fileNameList) {
+		for(final String fi: xmlIncCounts.keySet()) {
 			final File f = new File(workingDir,fi);
 			filesSeen.remove(f);
 		}
@@ -601,7 +625,7 @@ public final class ScanIDs {
 				   "</simplesect>",
 		};
 		System.out.println("\twriting links");
-		for(final String fi: fileNameList) {
+		for(final String fi: xmlIncCounts.keySet()) {
 			if(fi.equalsIgnoreCase(bookFileName)) {
 				continue;
 			}

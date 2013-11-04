@@ -80,9 +80,15 @@ public final class ExampleClipper extends DefaultHandler {
 		private final Map<String,Integer> chNumbers = new HashMap<String,Integer>();
 		private int clipNumber = 0;
 		
-		public ClipZipper(final ZipOutputStream o, final String dirName) {
+		public ClipZipper(final ZipOutputStream o, final String dirName) throws IOException {
 			this.o = o;
 			this.dirName = dirName;
+			final ZipEntry e = new ZipEntry("README.txt");
+			o.putNextEntry(e);
+			final String readmeStr = "Code snippets extract from book.";
+			final byte[] data = readmeStr.getBytes("UTF-8");
+		    o.write(data, 0, data.length);
+		    o.closeEntry();
 		}
 		
 		@Override
@@ -115,7 +121,7 @@ public final class ExampleClipper extends DefaultHandler {
 	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { EXAMPLE, "informalexample" }));
 	private final ClipConsumer clipConsumer;
 	// state
-	private final ItemLabeler itemLabeler = new ItemLabeler();
+	public final ItemLabeler itemLabeler = new ItemLabeler();
 	private StringBuilder chars = null;
 	private int nCallouts = 0;
 	private String progText = null;
