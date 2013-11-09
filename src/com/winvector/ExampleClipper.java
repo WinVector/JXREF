@@ -83,7 +83,8 @@ public final class ExampleClipper extends DefaultHandler {
 		public ClipZipper(final ZipOutputStream o, final String dirName) throws IOException {
 			this.o = o;
 			this.dirName = dirName;
-			final ZipEntry e = new ZipEntry("README.txt");
+			final String safeFileName = safeFileName(dirName + "/" + "README.txt");
+			final ZipEntry e = new ZipEntry(safeFileName);
 			o.putNextEntry(e);
 			final String readmeStr = "Code snippets extract from book.";
 			final byte[] data = readmeStr.getBytes("UTF-8");
