@@ -2,7 +2,7 @@
 
 # render all of the chapters to pdf
 # The Manning tool gets confused on numbering if more than one chapter is present- so we look in book.xml and parts to get
-# separate chapters (breaks cross chapter refs, could be fixed by using our extenal links from: https://github.com/WinVector/JXREF ).
+# separate chapters (breaks cross chapter refs, be fixed by using our extenal links from: https://github.com/WinVector/JXREF ).
 # assumes <xi: lines in book.xml are on a single line and we can grep/sed out the file name.
 # assumes <xi: lines in parts (found in book) are on a single line and we can grep/sed out the file name.
 # assumes first part is 0 (front-matter, not really a part) and numbers up by ones.

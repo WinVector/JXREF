@@ -9,7 +9,7 @@ bookDir=$SCRIPTDIR/../Book
 pushd $bookDir
 /bin/rm -rf generated
 fgrep 'TODO' *.xml
-java -classpath $SCRIPTDIR/JXML/JXREF/JXREF.jar com.winvector.ScanIDs
+java -classpath $SCRIPTDIR/JXREF.jar com.winvector.ScanIDs
 mv CodeExamples.zip generated
 
 # return to first dir
