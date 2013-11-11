@@ -58,8 +58,13 @@ do
    rm -f $resultDir/$tpdf
    fgrep -v '<xi:' $ti > tp.xml
    sh $toolDir/AAMakePDFMac.sh tp.xml $tpdf
-   pdfjoin $tpdf 2- --outfile $resultDir/$tpdf # assume first page in each render is blank (has been historicly)
-   pdffspecs="$pdffspecs $tpdf 2-"             # assume first page in each render is blank (has been historicly)
+   partspec="2-" # assume first page in each render is blank (has been historicly)
+   if [ $PCOUNTER -eq 0 ]
+      then
+      partspec="3-" # Frontmatter first 2 pages are useless
+      fi
+   pdfjoin $tpdf $partspec --outfile $resultDir/$tpdf 
+   pdffspecs="$pdffspecs $tpdf $partspec"
    tmppdfs="$tmppdfs $tpdf"
    chlist=`fgrep '<xi:' $ti | fgrep -v '_external_links.xml' | sed 's/^[^"]*"//' | sed 's/"[^"]*$//'`
    for ci in $chlist
@@ -68,8 +73,9 @@ do
       rm -f $cpdf
       rm -f $resultDir/$cpdf
       sh $toolDir/AAMakePDFMac.sh $ci $cpdf
-      pdfjoin $cpdf 2- --outfile $resultDir/$cpdf # assume first page in each render is blank (has been historicly)
-      pdffspecs="$pdffspecs $cpdf 2-"             # assume first page in each render is blank (has been historicly)
+      chspec="2-" # assume first page in each render is blank (has been historicly)
+      pdfjoin $cpdf $chspec --outfile $resultDir/$cpdf
+      pdffspecs="$pdffspecs $cpdf $chspec"
       tmppdfs="$tmppdfs $cpdf"
       let CCOUNTER=CCOUNTER+1 
    done
