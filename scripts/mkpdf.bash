@@ -23,7 +23,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # need to be in production directory for Manning tool to work
-if [ $# -gt 1 ]
+if [ $# -ne 1 ]
 then
    echo "mkpdfs takes at exactly one xml file arugment"
    popd
