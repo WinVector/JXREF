@@ -75,7 +75,7 @@ for ti in contentList:
             with open(ti,'r') as inf:
                 content = inf.read()
                 with open('tp.xml', 'w') as f:
-                   content = re.sub('<xi:include\s[^>]+/>',' ',content)
+                   content = re.sub(r'<xi:include\s[^>]+/>',' ',content)
                    f.write(content)
         else:
             shutil.copy(ti,"tp.xml")
