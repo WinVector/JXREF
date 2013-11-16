@@ -4,7 +4,7 @@
 # The Manning tool gets confused on numbering if more than one chapter is present- so we look in book.xml and parts to get
 # separate chapters (breaks cross chapter refs, fixed by using our extenal links from: https://github.com/WinVector/JXREF ).
 # assumes all xml files in same directory
-# assumes <xi:include lines are all on one line (so we can grep them out).
+# assumes <xi:include lines are all found with the regexp: '<xi:include\s[^>]+/>' (and nothing else matches this)
 # assumes <xi:include lines with "_external_links.xml" are only in chapters/appendicies (so we don't need to process below chapters).
 
 
@@ -72,9 +72,11 @@ for ti in contentList:
         pdfspecs.append(tpdf)
         pdfspecs.append(spec)
         if not (ni=='chapter' or ni=='appendix'):
-            f = open("tp.xml", "w")
-            call(['fgrep','-v','<xi:include',ti],stdout=f)
-            f.close()
+            with open(ti,'r') as inf:
+                content = inf.read()
+                with open('tp.xml', 'w') as f:
+                   content = re.sub('<xi:include\s[^>]+/>',' ',content)
+                   f.write(content)
         else:
             shutil.copy(ti,"tp.xml")
         with open(os.devnull, "w") as dn:
