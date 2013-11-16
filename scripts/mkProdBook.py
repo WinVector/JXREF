@@ -11,6 +11,7 @@
 import sys
 import os
 import re
+import shutil
 import itertools
 import xml.etree.ElementTree as ET
 from subprocess import call
@@ -70,12 +71,12 @@ for ti in contentList:
             spec='3-' # Frontmatter first 2 pages are useless
         pdfspecs.append(tpdf)
         pdfspecs.append(spec)
-        f = open("tp.xml", "w")
         if not (ni=='chapter' or ni=='appendix'):
-           call(['fgrep','-v','<xi:include',ti],stdout=f)
+            f = open("tp.xml", "w")
+            call(['fgrep','-v','<xi:include',ti],stdout=f)
+            f.close()
         else:
-           call(['cat',ti],stdout=f)
-        f.close()
+            shutil.copy(ti,"tp.xml")
         with open(os.devnull, "w") as dn:
             call(os.path.join(tooldir,'AAMakePDFMac.sh') + ' tp.xml ' + tpdf,shell=True,stdout=dn,stderr=dn)
             call(['pdfjoin',tpdf,spec,'--outfile',os.path.join(resultdir,tpdf)],stdout=dn,stderr=dn)
