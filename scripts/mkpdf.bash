@@ -23,31 +23,23 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # need to be in production directory for Manning tool to work
-if [ $# -gt 0 ]
+if [ $# -gt 1 ]
 then
-   if [ $# -gt 1 ]
-   then
-      echo "mkpdfs takes at most one xml file arugment"
-      popd
-      exit -1
-   fi
-   filename=$(basename "$1")
-   extension="${filename##*.}"
-   if [ $extension = "xml" ]
-   then
-      xmlist=$filename
-   else
-      echo "mkpdfs argument must end in .xml ( $1 )"
-      popd
-      exit -1
-   fi
-else 
-   # get list of chapter source xmls
-   xmlist=`fgrep '<xi:' book.xml | sed 's/^[^"]*"//' | sed 's/"[^"]*$//' | fgrep -v '_external_links.xml'`
+   echo "mkpdfs takes at exactly one xml file arugment"
+   popd
+   exit -1
+fi
+filename=$(basename "$1")
+extension="${filename##*.}"
+if [ $extension = "xml" ]
+then
+   xmlist=$filename
+else
+   echo "mkpdfs argument must end in .xml ( $1 )"
+   popd
+   exit -1
 fi
 echo $xmlist
-
-
 
 
 ## pre clean
