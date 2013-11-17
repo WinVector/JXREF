@@ -1,7 +1,9 @@
 #! /usr/bin/env python
 
 # copy from our book dir to manning dir, remove external_refs stuff
-# assumes <xi:include lines are all found with the regexp: r'<xi:include\s[^>]*href="[^"]*.xml_external_links.xml"[^>]*/>' (and nothing else matches this)
+# assumes <xi:include lines are all found with the regexp: 
+#  r'<xi:include\s[^><]*href="[^"><]*.xml_external_links.xml"[^><]*/>'
+#  (and nothing else matches this)
 
 import sys
 import os
@@ -29,7 +31,7 @@ for f in [f for f in os.listdir('.') if (not f.startswith('.')) and f.endswith('
     with open(f,'r') as inf:
         content = inf.read()
         with open(os.path.join(proddir,f), 'w') as ouf:
-           content = re.sub(r'<xi:include\s[^>]*href="[^"]*.xml_external_links.xml"[^>]*/>',' ',content)
+           content = re.sub(r'<xi:include\s[^><]*href="[^"><]*.xml_external_links.xml"[^><]*/>',' ',content)
            ouf.write(content)
 # return to first dir
 os.chdir(origdir)
