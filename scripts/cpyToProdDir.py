@@ -9,6 +9,7 @@ import sys
 import os
 import re
 import shutil
+import pipes
 import itertools
 import xml.etree.ElementTree as ET
 from subprocess import call
@@ -26,7 +27,7 @@ if not (os.path.isdir(scriptdir) and os.path.isdir(sourcedir) and os.path.isdir(
 os.chdir(proddir)
 call('/bin/rm -rf *.xml *.css *.xsd figures',shell=True)
 os.chdir(sourcedir)
-call('/bin/cp -rf figures *.css *.xsd ' + proddir,shell=True)
+call('/bin/cp -rf figures *.css *.xsd ' + pipes.quote(proddir),shell=True)
 for f in [f for f in os.listdir('.') if (not f.startswith('.')) and f.endswith('.xml')]:
     with open(f,'r') as inf:
         content = inf.read()

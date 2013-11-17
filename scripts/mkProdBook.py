@@ -14,6 +14,7 @@ import os
 import re
 import shutil
 import itertools
+import pipes
 import xml.etree.ElementTree as ET
 from subprocess import call
 
@@ -81,7 +82,7 @@ for ti in contentList:
         else:
             shutil.copy(ti,"tp.xml")
         with open(os.devnull, "w") as dn:
-            call(os.path.join(tooldir,'AAMakePDFMac.sh') + ' tp.xml ' + tpdf,shell=True,stdout=dn,stderr=dn)
+            call(pipes.quote(os.path.join(tooldir,'AAMakePDFMac.sh')) + ' tp.xml ' + pipes.quote(tpdf),shell=True,stdout=dn,stderr=dn)
             call(['pdfjoin',tpdf,spec,'--outfile',os.path.join(resultdir,tpdf)],stdout=dn,stderr=dn)
 
 print pdfspecs
