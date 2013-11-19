@@ -74,7 +74,7 @@ public final class ScanIDs {
 		}));
 
 	public static final Set<String> cantReferToId = new HashSet<String>(Arrays.asList(new String[] {
-			"sect3", "informalexample", "formalpara"
+			"sect3", "informalexample", "formalpara", "simplesect"
 		}));
 
 	
