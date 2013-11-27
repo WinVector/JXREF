@@ -45,6 +45,18 @@ To Use:
 
    Note: all of the extract process and results assume correctly formatted XML for proper operations.
 
+  
+  Requires a Java XML properties file named CodeConfig.xml in working directory with the following fields set:
+  
+  <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+  <properties>
+      <comment>Config example extrator from https://github.com/WinVector/JXREF</comment>
+      <entry key="TakeCallouts">True</entry>
+      <entry key="OpenComment">#</entry>
+      <entry key="CloseComment"></entry>
+      <entry key="ReadMe">README text</entry>
+  </properties>
+
 
   Example errors reported in test/BadBook
 

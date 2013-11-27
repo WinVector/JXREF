@@ -80,13 +80,12 @@ public final class ExampleClipper extends DefaultHandler {
 		private final Map<String,Integer> chNumbers = new HashMap<String,Integer>();
 		private int clipNumber = 0;
 		
-		public ClipZipper(final ZipOutputStream o, final String dirName) throws IOException {
+		public ClipZipper(final ZipOutputStream o, final String dirName, final String readmeStr) throws IOException {
 			this.o = o;
 			this.dirName = dirName;
 			final String safeFileName = safeFileName(dirName + "/" + "README.txt");
 			final ZipEntry e = new ZipEntry(safeFileName);
 			o.putNextEntry(e);
-			final String readmeStr = "Code snippets extract from book.";
 			final byte[] data = readmeStr.getBytes("UTF-8");
 		    o.write(data, 0, data.length);
 		    o.closeEntry();

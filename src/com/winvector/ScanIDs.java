@@ -1,6 +1,7 @@
 package com.winvector;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -12,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -53,8 +55,17 @@ import com.winvector.ExampleClipper.ClipZipper;
  *  
  *  Note: all of the extract process and results assume correctly formatted XML for proper operations.
  *  
- *  Right now hard-wired to R style comments ( hash)
- *  TODO: expose comments style and options as controls.
+ *  Requires a Java XML properties file named CodeConfig.xml in working directory with the following fields set:
+ *  
+ *  <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+ *  <properties>
+ *      <comment>Config example extrator from https://github.com/WinVector/JXREF</comment>
+ *      <entry key="TakeCallouts">True</entry>
+ *      <entry key="OpenComment">#</entry>
+ *      <entry key="CloseComment"></entry>
+ *      <entry key="ReadMe">README text</entry>
+ *  </properties>
+ * 
  *   
  * @author johnmount
  *
@@ -104,10 +115,11 @@ public final class ScanIDs {
 	public final String ourSuffix = "_external_links.xml";
 	public final File workingDir;
 	public final File destDir;
-	public boolean takeCallouts = true; // TODO: expose this as a control
+	public final Properties props;
 
-	public ScanIDs(final File workingDir) {
+	public ScanIDs(final File workingDir, final Properties props) {
 		this.workingDir = workingDir;
+		this.props = props;
 		destDir = new File(workingDir,"generated");
 		destDir.mkdirs();
 	}
@@ -121,7 +133,10 @@ public final class ScanIDs {
 		
 		public OutlineHandler(final ClipConsumer clipConsumer) {
 			exampleClipper = new ExampleClipper(clipConsumer);
-			exampleClipper.takeCallouts = takeCallouts;
+			exampleClipper.takeCallouts = Boolean.parseBoolean(props.getProperty("TakeCallouts"));
+			exampleClipper.openComment = props.getProperty("OpenComment");
+			exampleClipper.closeComment = props.getProperty("CloseComment");
+			System.out.println("break");
 		}
 
 		@Override
@@ -518,10 +533,11 @@ public final class ScanIDs {
 		getXMLIncludesAndCounts(saxParser,bookFileName,xmlIncCounts);
 
 		{ // scan for chapter and sect 1 structure, and zip up examples
+			final String readMeStr = props.getProperty("ReadMe");
 			final File of = new File(zipName + ".zip");
 			System.out.println("writing: " + of.getAbsolutePath());
 			final ZipOutputStream o = new ZipOutputStream(new FileOutputStream(of));
-			final ClipConsumer clipConsumer = new ClipZipper(o,zipName);
+			final ClipConsumer clipConsumer = new ClipZipper(o,zipName,readMeStr);
 			for(final Entry<String, Integer> me: xmlIncCounts.entrySet()) {
 				final String fi = me.getKey();
 				final int count = me.getValue();
@@ -656,7 +672,9 @@ public final class ScanIDs {
 	 */
 	public static void main(final String[] args) throws Exception {
 		final File workingDir = new File(".");
-		final ScanIDs scanner = new ScanIDs(workingDir);
+		final Properties prop = new Properties();
+		prop.loadFromXML(new FileInputStream("CodeConfig.xml"));
+		final ScanIDs scanner = new ScanIDs(workingDir,prop);
 		String zipName = "CodeExamples";
 		final int totErrors = scanner.doWork(zipName);
 		if(totErrors>0) {
