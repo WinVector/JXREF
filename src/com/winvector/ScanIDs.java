@@ -136,7 +136,6 @@ public final class ScanIDs {
 			exampleClipper.takeCallouts = Boolean.parseBoolean(props.getProperty("TakeCallouts"));
 			exampleClipper.openComment = props.getProperty("OpenComment");
 			exampleClipper.closeComment = props.getProperty("CloseComment");
-			System.out.println("break");
 		}
 
 		@Override
