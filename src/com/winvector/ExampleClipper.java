@@ -105,6 +105,9 @@ public final class ExampleClipper extends DefaultHandler {
 					+ ".txt");
 			final ZipEntry e = new ZipEntry(safeFileName);
 			o.putNextEntry(e);
+			if(clip.progText.indexOf("&amp;")>=0) {
+				System.out.println("Warning clip has '&amp;'s: " + safeFileName);
+			}
 			final byte[] data = clip.toString().getBytes("UTF-8");
 		    o.write(data, 0, data.length);
 		    o.closeEntry();
