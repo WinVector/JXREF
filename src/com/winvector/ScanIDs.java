@@ -636,7 +636,7 @@ public final class ScanIDs {
 				   "	xsi:schemaLocation=\"http://www.manning.com/schemas/book manning-book.xsd\"",
 				   "	xmlns=\"http://www.manning.com/schemas/book\" xmlns:ns=\"http://www.manning.com/schemas/book\"",
 				   "	xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">",
-				   "	<title>External links section</title>",
+				   "	<title>.</title>",
 		};
 		final String[] footer = {
 				   "</simplesect>",
