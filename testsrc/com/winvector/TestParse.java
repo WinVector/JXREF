@@ -25,7 +25,7 @@ public class TestParse {
 		final File f = File.createTempFile("testZip",".zip");
 		//System.out.println("writing: " + f.getAbsolutePath());
 		final ZipOutputStream o = new ZipOutputStream(new FileOutputStream(f));
-		final ExampleClipper sectCounter = new ExampleClipper(new ClipZipper(o,"bd","TestText"));
+		final ExampleClipper sectCounter = new ExampleClipper(new ClipZipper(o,"bd","TestText",".txt"));
 		final InputStream source = this.getClass().getClassLoader().getResourceAsStream("com/winvector/ExampleElt.xml");
 		saxParser.parse(source,sectCounter);
 		o.close();

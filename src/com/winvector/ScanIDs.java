@@ -534,10 +534,11 @@ public final class ScanIDs {
 
 		{ // scan for chapter and sect 1 structure, and zip up examples
 			final String readMeStr = props.getProperty("ReadMe");
+			final String fileSuffix = props.getProperty("FileSuffix");
 			final File of = new File(zipName + ".zip");
 			System.out.println("writing: " + of.getAbsolutePath());
 			final ZipOutputStream o = new ZipOutputStream(new FileOutputStream(of));
-			final ClipConsumer clipConsumer = new ClipZipper(o,zipName,readMeStr);
+			final ClipConsumer clipConsumer = new ClipZipper(o,zipName,readMeStr,fileSuffix);
 			for(final Entry<String, Integer> me: xmlIncCounts.entrySet()) {
 				final String fi = me.getKey();
 				final int count = me.getValue();

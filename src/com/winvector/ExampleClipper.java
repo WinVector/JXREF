@@ -77,12 +77,14 @@ public final class ExampleClipper extends DefaultHandler {
 		private final String dirName;
 		private final NumberFormat clipNF = new DecimalFormat("00000");
 		private final NumberFormat chapNF = new DecimalFormat("00");
+		private final String fileSuffix;
 		private final Map<String,Integer> chNumbers = new HashMap<String,Integer>();
 		private int clipNumber = 0;
 		
-		public ClipZipper(final ZipOutputStream o, final String dirName, final String readmeStr) throws IOException {
+		public ClipZipper(final ZipOutputStream o, final String dirName, final String readmeStr, final String fileSuffix) throws IOException {
 			this.o = o;
 			this.dirName = dirName;
+			this.fileSuffix = fileSuffix;
 			final String safeFileName = safeFileName(dirName + "/" + "README.txt");
 			final ZipEntry e = new ZipEntry(safeFileName);
 			o.putNextEntry(e);
@@ -102,7 +104,7 @@ public final class ExampleClipper extends DefaultHandler {
 			final String safeFileName = safeFileName(dirName 
 					+ "/" + cleanDirComponent(chapNF.format(chNumber) + "_" + clip.chapter) 
 					+ "/" + cleanDirComponent(clipNF.format(clipNumber) + "_" + clip.positionCode) 
-					+ ".txt");
+					+ fileSuffix);
 			final ZipEntry e = new ZipEntry(safeFileName);
 			o.putNextEntry(e);
 			if(clip.progText.indexOf("&amp;")>=0) {
@@ -120,8 +122,7 @@ public final class ExampleClipper extends DefaultHandler {
 	public String closeComment = "";
 	public String lineBreak = "\n";
 	private static final String PROGRAMLISTING = "programlisting";
-	private static final String EXAMPLE = "example";
-	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { EXAMPLE, "informalexample" }));
+	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { "example", "informalexample" }));
 	private final ClipConsumer clipConsumer;
 	// state
 	public final ItemLabeler itemLabeler = new ItemLabeler();
