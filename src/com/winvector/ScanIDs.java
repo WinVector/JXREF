@@ -277,9 +277,10 @@ public final class ScanIDs {
 		public final Map<String,FileRec> fileResfToExample = new TreeMap<String,FileRec>(compareIgnoreCase); // file refs overall
 		// callout declaration to use matching
 		private Set<String> knownCallOuts = null;
-		private final Set<String> perXMLResourceDirs = new TreeSet<String>();
 		private ArrayList<TagRec> callOutsMarks = null;
 		private ArrayList<TagRec> callOutsTexts = null;
+		private boolean sawAnnotSet = false;
+		private final Set<String> perXMLResourceDirs = new TreeSet<String>();
 
 		public void startXMLFile(final String fi) {
 			this.fi = fi;
@@ -304,6 +305,13 @@ public final class ScanIDs {
 			return true;
 		}
 		
+		private boolean interestingString(final String s) {
+			if(null==s) {
+				return false;
+			}
+			return s.trim().length()>0;
+		}
+		
 		@Override
 		public void startElement(final String uri, 
 				final String localName, final String qName, 
@@ -313,6 +321,7 @@ public final class ScanIDs {
 				knownCallOuts = new TreeSet<String>(compareIgnoreCase);
 				callOutsMarks = new ArrayList<TagRec>();
 				callOutsTexts = new ArrayList<TagRec>();
+				sawAnnotSet = interestingString(attributes.getValue("annotations"));
 			}
 			{
 				final String IDFIELD = "id";
@@ -460,6 +469,13 @@ public final class ScanIDs {
 					final TagRec here = new TagRec(fi,qName,"","");
 					System.out.println("Error: " + here + " callouts not in matching order");
 					++nErrors;
+				}
+				if((!disordered)&&(n>0)) {
+					if(!sawAnnotSet) {
+						final TagRec here = new TagRec(fi,qName,"","");
+						System.out.println("Warn: " + here + " didn't set annotations in example or informalexample");
+						++nErrors;						
+					}
 				}
 				// prepare for next pass
 				knownCallOuts = null;
