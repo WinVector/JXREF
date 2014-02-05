@@ -29,6 +29,7 @@ public final class ExampleClipper extends DefaultHandler {
 		public String chapter;
 		public String positionCode;
 		public String positionDescription;
+		public String foundSuffix;
 		public String clipTitle;
 		public String progText;
 		public ArrayList<String> calloutText;
@@ -77,14 +78,14 @@ public final class ExampleClipper extends DefaultHandler {
 		private final String dirName;
 		private final NumberFormat clipNF = new DecimalFormat("00000");
 		private final NumberFormat chapNF = new DecimalFormat("00");
-		private final String fileSuffix;
+		private final String defaultFileSuffix;
 		private final Map<String,Integer> chNumbers = new HashMap<String,Integer>();
 		private int clipNumber = 0;
 		
-		public ClipZipper(final ZipOutputStream o, final String dirName, final String readmeStr, final String fileSuffix) throws IOException {
+		public ClipZipper(final ZipOutputStream o, final String dirName, final String readmeStr, final String defaultFileSuffix) throws IOException {
 			this.o = o;
 			this.dirName = dirName;
-			this.fileSuffix = fileSuffix;
+			this.defaultFileSuffix = defaultFileSuffix;
 			final String safeFileName = safeFileName(dirName + "/" + "README.txt");
 			final ZipEntry e = new ZipEntry(safeFileName);
 			o.putNextEntry(e);
@@ -100,6 +101,10 @@ public final class ExampleClipper extends DefaultHandler {
 			if(null==chNumber) {
 				chNumber = chNumbers.size() + 1;
 				chNumbers.put(clip.chapter,chNumber);
+			}
+			String fileSuffix = defaultFileSuffix;
+			if((clip.foundSuffix!=null)&&(clip.foundSuffix.trim().length()>0)) {
+				fileSuffix = "." + clip.foundSuffix.trim();
 			}
 			final String safeFileName = safeFileName(dirName 
 					+ "/" + cleanDirComponent(chapNF.format(chNumber) + "_" + clip.chapter) 
@@ -128,6 +133,7 @@ public final class ExampleClipper extends DefaultHandler {
 	public final ItemLabeler itemLabeler = new ItemLabeler();
 	private StringBuilder chars = null;
 	private int nCallouts = 0;
+	private String foundSuffix = null;
 	private String progText = null;
 	private ArrayList<String> calloutText = null;
 	private String progTitle = null;
@@ -145,6 +151,7 @@ public final class ExampleClipper extends DefaultHandler {
 		itemLabeler.startElement(uri, localName, qName, attributes);
 		if(qName.equals(PROGRAMLISTING)) {
 			progText = null;
+			foundSuffix = attributes.getValue("lang");
 			calloutText = null;
 			nCallouts = 0;
 			chars = new StringBuilder();
@@ -196,6 +203,7 @@ public final class ExampleClipper extends DefaultHandler {
 				clip.positionCode = itemLabeler.curPositionCode(qName);
 				clip.positionDescription = itemLabeler.curPositionDescription(qName);
 				clip.clipTitle = progTitle;
+				clip.foundSuffix = foundSuffix;
 				clip.progText = progText;
 				clip.calloutText = calloutText;
 				if(null!=clipConsumer) {
