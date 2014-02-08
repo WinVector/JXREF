@@ -82,6 +82,7 @@ public final class ScanIDs {
 	public static final Set<String> mustHaveId = new HashSet<String>(Arrays.asList(new String[] {
 			"co", "figure"	
 		}));
+	
 
 	public static final Set<String> cantReferToId = new HashSet<String>(Arrays.asList(new String[] {
 			"sect3", "informalexample", "formalpara", "simplesect", "title", "para", "programlisting", "sect4",
@@ -129,9 +130,11 @@ public final class ScanIDs {
 		private final Set<String> targets = new TreeSet<String>(Arrays.asList(new String[] {"chapter", "part", "appendix", "sect1"}));
 		private final ExampleClipper exampleClipper;
 		private LinkedList<String> tagStack = new LinkedList<String>();
+		private final ErrorCollector ec;
 		private StringBuilder titleBuf = null;
 		
-		public OutlineHandler(final ClipConsumer clipConsumer) {
+		public OutlineHandler(final ClipConsumer clipConsumer, final ErrorCollector ec) {
+			this.ec = ec;
 			exampleClipper = new ExampleClipper(clipConsumer);
 			exampleClipper.takeCallouts = Boolean.parseBoolean(props.getProperty("TakeCallouts"));
 			exampleClipper.openComment = props.getProperty("OpenComment");
@@ -167,8 +170,11 @@ public final class ScanIDs {
                 final String localName,
                 final String qName)
                 throws SAXException {
-			tagStack.removeLast();
+			final String here = tagStack.removeLast();
 			if(null!=titleBuf) {
+				if(titleBuf.toString().trim().length()<=0) {
+					ec.mkError("Empty title", "Empty title: " + exampleClipper.itemLabeler.curPositionCode(here));
+				}
 				if((!tagStack.isEmpty())) {
 					final String prevElt = tagStack.getLast();
 					if(targets.contains(prevElt)) {
@@ -216,9 +222,13 @@ public final class ScanIDs {
 	
 	private final class CheckHandler extends DefaultHandler {
 		public String fi = null;
-		public final ErrorCollector ec = new ErrorCollector();
+		private final ErrorCollector ec;
 		public Locator locator = null;
 		public ItemLabeler itemLabeler = null;
+		
+		public CheckHandler(final ErrorCollector ec) {
+			this.ec = ec;
+		}
 		
 		public final class TagRec implements Comparable<TagRec> {
 			public final String fileName;
@@ -562,7 +572,7 @@ public final class ScanIDs {
 		final String bookFileName = "book.xml";
 		final LinkedHashMap<String,Integer> xmlIncCounts = new LinkedHashMap<String,Integer>();
 		getXMLIncludesAndCounts(saxParser,bookFileName,xmlIncCounts);
-
+		final ErrorCollector ec = new ErrorCollector();
 		{ // scan for chapter and sect 1 structure, and zip up examples
 			final String readMeStr = props.getProperty("ReadMe");
 			final String defaultFileSuffix = props.getProperty("FileSuffix");
@@ -576,13 +586,13 @@ public final class ScanIDs {
 				if(count<=0) {
 					final File f = new File(workingDir,fi);
 					//System.out.println("\treading: " + fi + "\t" + f);
-					final OutlineHandler dataHandler = new OutlineHandler(clipConsumer);
+					final OutlineHandler dataHandler = new OutlineHandler(clipConsumer,ec);
 					saxParser.parse(f,dataHandler);
 				}
 			}
 			o.close();
 		}
-		final CheckHandler checkHandler = new CheckHandler();
+		final CheckHandler checkHandler = new CheckHandler(ec);
 		final Map<String,String> resourceDirToXML = new TreeMap<String,String>();
 		{ // scan all files for tags
 			for(final String fi: xmlIncCounts.keySet()) {
@@ -601,7 +611,6 @@ public final class ScanIDs {
 				}
 			}
 		}
-		final ErrorCollector ec = checkHandler.ec;
 		// check for broken/dangling links
 		for(final Entry<String, com.winvector.ScanIDs.CheckHandler.TagRec> me: checkHandler.idRefToFirstIdRef.entrySet()) {
 			final String headId = me.getKey();

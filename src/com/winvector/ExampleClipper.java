@@ -41,8 +41,9 @@ public final class ExampleClipper extends DefaultHandler {
 			b.append(openComment + " " + positionCode + " " + closeComment + lineBreak);
 			b.append(openComment + " " + positionDescription + " " + closeComment + lineBreak);
 			if((null!=clipTitle)&&(clipTitle.trim().length()>0)) {
-				b.append(openComment + " " + clipTitle  + " " + closeComment + lineBreak);
+				b.append(openComment + " Title: " + clipTitle  + " " + closeComment + lineBreak);
 			}
+			b.append(lineBreak);
 			b.append(progText + lineBreak);
 			if(null!=calloutText) {
 				for(int i=0;i<calloutText.size();++i) {
@@ -53,6 +54,7 @@ public final class ExampleClipper extends DefaultHandler {
 					b.append(" " + closeComment + lineBreak);
 				}
 			}
+			b.append(lineBreak);
 			return b.toString();
 		}
 	}
@@ -127,11 +129,13 @@ public final class ExampleClipper extends DefaultHandler {
 	public String closeComment = "";
 	public String lineBreak = "\n";
 	private static final String PROGRAMLISTING = "programlisting";
+	private static final String CALLOUT = "callout";
+	private static final String TITLE = "title";
 	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { "example", "informalexample" }));
 	private final ClipConsumer clipConsumer;
 	// state
 	public final ItemLabeler itemLabeler = new ItemLabeler();
-	private StringBuilder chars = null;
+	private Map<String,StringBuilder> charCollectors = new HashMap<String,StringBuilder>();
 	private int nCallouts = 0;
 	private String foundSuffix = null;
 	private String progText = null;
@@ -154,18 +158,21 @@ public final class ExampleClipper extends DefaultHandler {
 			foundSuffix = attributes.getValue("lang");
 			calloutText = null;
 			nCallouts = 0;
-			chars = new StringBuilder();
+			charCollectors.put(PROGRAMLISTING,new StringBuilder());
+		} else if(qName.equals(TITLE)) {
+			charCollectors.put(TITLE,new StringBuilder());
 		} else if(qName.equals("calloutlist")) {
 			calloutText = new ArrayList<String>();
 		}
 		if(takeCallouts) {
 			if(qName.equals("co")) {
+				final StringBuilder chars = charCollectors.get(PROGRAMLISTING);
 				if(null!=chars) {
 					++nCallouts;
 					chars.append("\t" + openComment + " Note: " + nCallouts + " " + closeComment);
 				}
-			} else if(qName.equals("callout")) {
-				chars = new StringBuilder();
+			} else if(qName.equals(CALLOUT)) {
+				charCollectors.put(CALLOUT,new StringBuilder());
 			}
 		}
 	}
@@ -176,7 +183,7 @@ public final class ExampleClipper extends DefaultHandler {
             final int length)
             throws SAXException {
 		itemLabeler.characters(ch, start, length);
-		if(null!=chars) {
+		for(final StringBuilder chars: charCollectors.values()) {
 			for(int i=start;i<start+length;++i) {
 				chars.append(ch[i]);
 			}
@@ -190,11 +197,11 @@ public final class ExampleClipper extends DefaultHandler {
             throws SAXException {
 		itemLabeler.endElement(uri, localName, qName);
 		if(qName.equals(PROGRAMLISTING)) {
-			progText = chars.toString();
-			chars = null;
-		} else if(qName.equals("callout")) {
-			calloutText.add(chars.toString());
-			chars = null;
+			progText = charCollectors.remove(PROGRAMLISTING).toString();
+		} else if(qName.equals(CALLOUT)) {
+			calloutText.add(charCollectors.remove(CALLOUT).toString());
+		} else if(qName.equals(TITLE)) {
+			progTitle = charCollectors.remove(TITLE).toString();
 		}
 		if(blocks.contains(qName)) {
 			if((null!=progText)&&(progText.trim().length()>0)) {
