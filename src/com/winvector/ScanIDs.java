@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -81,7 +80,7 @@ public final class ScanIDs {
 	}));
 	
 	public static final Set<String> mustHaveId = new HashSet<String>(Arrays.asList(new String[] {
-			"co", "example", "figure"	
+			"co", "figure"	
 		}));
 
 	public static final Set<String> cantReferToId = new HashSet<String>(Arrays.asList(new String[] {
@@ -184,10 +183,40 @@ public final class ScanIDs {
 			exampleClipper.endElement(uri, localName, qName);
 		}
 	}
+	
+	private static final class ErrorCollector {
+		public int nErrors = 0;
+		private Map<String,ArrayList<String>> errorsByClass = new TreeMap<String,ArrayList<String>>();
 		
+		public void mkError(final String group, final String msg) {
+			ArrayList<String> list = errorsByClass.get(group);
+			if(null==list) {
+				list = new ArrayList<String>();
+				errorsByClass.put(group,list);
+			}
+			list.add(msg);
+			++nErrors;
+		}
+		
+		public void printReport(final PrintStream p) {
+			p.println("totalErrorGroups: " + errorsByClass.size() + ", totalErrors: " + nErrors);
+			for(final Entry<String, ArrayList<String>> me: errorsByClass.entrySet()) {
+				final String group = me.getKey();
+				final ArrayList<String> list = me.getValue();
+				p.println();
+				p.println("###########################################");
+				p.println("Error group: " + group + ",\tsize: " + list.size());
+				for(final String ei : list) {
+					p.println("\t" + ei);
+				}
+				p.println();
+			}
+		}
+	}
+	
 	private final class CheckHandler extends DefaultHandler {
 		public String fi = null;
-		public int nErrors = 0;
+		public final ErrorCollector ec = new ErrorCollector();
 		public Locator locator = null;
 		public ItemLabeler itemLabeler = null;
 		
@@ -329,26 +358,22 @@ public final class ScanIDs {
 				if(null!=id) {
 					final TagRec idRec = new TagRec(fi,qName,IDFIELD,id);
 					if(!goodID(id)) {
-						System.out.println("Error: " + fi + " tag " + idRec + " bad id (must match regexp: " +  IDREGEXP + ")");
-						++nErrors;
+						ec.mkError(" bad id (must match regexp: " +  IDREGEXP + ")", "Error: " + fi + " tag " + idRec + " bad id (must match regexp: " +  IDREGEXP + ")");
 					} else {
 						if(cantReferToId.contains(qName)) {
-							System.out.println("Warning unrefferable " + fi + " tag " + idRec + " has an ID");
+							ec.mkError("Warning unrefferable ","Warning unrefferable " + fi + " tag " + idRec + " has an ID");
 						}
 						if(idToRec.containsKey(id)) {
-							System.out.println("Error: " + fi + " tag " + idRec + " duplicates tag " + idToRec.get(id));
-							++nErrors;
+							ec.mkError(" duplicates tag ","Error: " + fi + " tag " + idRec + " duplicates tag " + idToRec.get(id));
 						} else {
 							idToRec.put(id,idRec);
 							if("co".equalsIgnoreCase(qName)) {
 								if(null==callOutsMarks) {
-									System.out.println("Error: " + fi + " co " + idRec + " when not in a callout environment (example/informalexample)");
-									++nErrors;									
+									ec.mkError(" when not in a callout environment (example/informalexample)","Error: " + fi + " co " + idRec + " when not in a callout environment (example/informalexample)");
 								} else {
 									if(knownCallOuts.contains(id)) {
 										// not reached as error is currently handled elsewhere in the flow
-										System.out.println("Error: " + fi + " co " + idRec + " duplicate callout tag");
-										++nErrors;																			
+										ec.mkError(" duplicate callout tag","Error: " + fi + " co " + idRec + " duplicate callout tag");																		
 									} else {
 										callOutsMarks.add(idRec);
 										knownCallOuts.add(id);
@@ -365,8 +390,7 @@ public final class ScanIDs {
 				} else {
 					if(mustHaveId.contains(qName)) {
 						final TagRec idRec = new TagRec(fi,qName,IDFIELD,id);
-						System.out.println("Error: " + fi + " " + idRec + " must have an ID");
-						++nErrors;
+						ec.mkError(" must have an ID","Error: " + fi + " " + idRec + " must have an ID");
 					}
 				}
 			}
@@ -376,24 +400,20 @@ public final class ScanIDs {
 				if(null!=linkEnd) {
 					final TagRec ourExample = new TagRec(fi,qName,field,linkEnd);
 					if(!goodID(linkEnd)) {
-						System.out.println("Error: " + ourExample + " bad id (must start with a letter and have no whitespace)");
-						++nErrors;
+						ec.mkError(" bad id (must start with a letter and have no whitespace)","Error: " + ourExample + " bad id (must start with a letter and have no whitespace)");
 					} else {
 						final TagRec prevExample = idRefToFirstIdRef.get(linkEnd);
 						if(null!=prevExample) {
 							if(prevExample.id.compareTo(linkEnd)!=0) {
-								System.out.println("Error: " + ourExample + " linkend " + linkEnd + " confusing casing with " + prevExample);
-								++nErrors;						
+								ec.mkError(" confusing casing with ","Error: " + ourExample + " linkend " + linkEnd + " confusing casing with " + prevExample);					
 							}
 						} else {
 							if(field.equals(AREAREFKEY)) {
 								if(null==callOutsMarks) {
-									System.out.println("Error: " + fi + " arearef " + ourExample + " when not in a callout environment (example/informalexample)");
-									++nErrors;									
+									ec.mkError(" when not in a callout environment (example/informalexample)","Error: " + fi + " arearef " + ourExample + " when not in a callout environment (example/informalexample)");								
 								} else {
 									if(!knownCallOuts.contains(linkEnd)) {
-										System.out.println("Error: " + fi + " co " + ourExample + " unknown callout tag");
-										++nErrors;		
+										ec.mkError(" unknown callout tag","Error: " + fi + " co " + ourExample + " unknown callout tag");
 									} else {
 										callOutsTexts.add(ourExample);
 									}
@@ -414,15 +434,13 @@ public final class ScanIDs {
 						final FileRec prevGlobalExample = fileResfToExample.get(fileRef);
 						if(null!=prevGlobalExample) {
 							if(prevGlobalExample.id.compareTo(fileRef)!=0) {
-								System.out.println("Error: " + here + " fileref " + fileRef + " confusing casing with " + prevGlobalExample);
-								++nErrors;						
+								ec.mkError(" confusing casing with ","Error: " + here + " fileref " + fileRef + " confusing casing with " + prevGlobalExample);				
 							}
 						} else {
 							final File ref = new File(workingDir,fileRef);
 							fileResfToExample.put(fileRef,new FileRec(fileRef,ref));
 							if((!ref.exists())||(!ref.canRead())) {
-								System.out.println("Error: " + here + " missing referred file: " + fileRef);
-								++nErrors;
+								ec.mkError(" missing referred file: ","Error: " + here + " missing referred file: " + fileRef);
 							}
 						}
 					} 
@@ -436,8 +454,7 @@ public final class ScanIDs {
 							try {
 								perXMLResourceDirs.add(resourceDir.getCanonicalPath().toString());
 							} catch (IOException e) {
-								System.out.println("Error: " + here + " threw on getCanonicalPath(): " + fileRef);
-								++nErrors;
+								ec.mkError(" threw on getCanonicalPath(): ","Error: " + here + " threw on getCanonicalPath(): " + fileRef);
 							}
 						}
 					}
@@ -467,14 +484,12 @@ public final class ScanIDs {
 				}
 				if(disordered) {
 					final TagRec here = new TagRec(fi,qName,"","");
-					System.out.println("Error: " + here + " callouts not in matching order");
-					++nErrors;
+					ec.mkError(" callouts not in matching order","Error: " + here + " callouts not in matching order");
 				}
 				if((!disordered)&&(n>0)) {
 					if(!sawAnnotSet) {
 						final TagRec here = new TagRec(fi,qName,"","");
-						System.out.println("Warn: " + here + " didn't set annotations in example or informalexample");
-						++nErrors;						
+						ec.mkError(" didn't set annotations in example or informalexample","Warn: " + here + " didn't set annotations in example or informalexample");					
 					}
 				}
 				// prepare for next pass
@@ -567,7 +582,6 @@ public final class ScanIDs {
 			}
 			o.close();
 		}
-		int totErrors = 0;
 		final CheckHandler checkHandler = new CheckHandler();
 		final Map<String,String> resourceDirToXML = new TreeMap<String,String>();
 		{ // scan all files for tags
@@ -587,30 +601,25 @@ public final class ScanIDs {
 				}
 			}
 		}
-		totErrors += checkHandler.nErrors;
-		final SortedMap<com.winvector.ScanIDs.CheckHandler.TagRec,String> foundErrors = new TreeMap<com.winvector.ScanIDs.CheckHandler.TagRec,String>();
+		final ErrorCollector ec = checkHandler.ec;
 		// check for broken/dangling links
 		for(final Entry<String, com.winvector.ScanIDs.CheckHandler.TagRec> me: checkHandler.idRefToFirstIdRef.entrySet()) {
 			final String headId = me.getKey();
 			final com.winvector.ScanIDs.CheckHandler.TagRec linkend = me.getValue();
 			final com.winvector.ScanIDs.CheckHandler.TagRec forbidden = checkHandler.cantGloballyRef.get(linkend.id);
 			if(null!=forbidden) {
-				foundErrors.put(linkend,"Error: illegal global ref from " + linkend + " to " + forbidden);
-				++totErrors;
+				ec.mkError("Error: illegal global ref from ","Error: illegal global ref from " + linkend + " to " + forbidden);
 			} else {
 				final com.winvector.ScanIDs.CheckHandler.TagRec rec = checkHandler.idToRec.get(linkend.id);
 				if(null==rec) {
-					foundErrors.put(linkend,"Error: link " + linkend + " broken");
-					++totErrors;
+					ec.mkError("file link broken","Error: link " + linkend + " broken");
 				} else {
 					final com.winvector.ScanIDs.CheckHandler.TagRec linkhead = checkHandler.idToRec.get(headId);
 					if(cantReferToId.contains(linkhead.tagType)) {
-						foundErrors.put(linkend,"Error: linkend " + linkend + " references a " + linkhead.tagType);
-						++totErrors;							
+						ec.mkError("file ref problem","Error: linkend " + linkend + " references a " + linkhead.tagType);						
 					}
 					if(rec.id.compareTo(linkend.id)!=0) {
-						foundErrors.put(linkend,"Error: linkend " + linkend + " confusing casing with " + rec.id);
-						++totErrors;	
+						ec.mkError("file casing","Error: linkend " + linkend + " confusing casing with " + rec.id);
 					}
 				}
 			}
@@ -618,13 +627,10 @@ public final class ScanIDs {
 		for(final com.winvector.ScanIDs.CheckHandler.TagRec dest: checkHandler.mustReferTo.values()) {
 			final com.winvector.ScanIDs.CheckHandler.TagRec use = checkHandler.idRefToFirstIdRef.get(dest.id);
 			if(null==use) {
-				foundErrors.put(dest,"Error: linkend " + dest + " never referred to");
-				++totErrors;	
+				ec.mkError("file never referred to","Error: linkend " + dest + " never referred to");
 			}
 		}
-		for(final String errmsgs: foundErrors.values()) {
-			System.out.println(errmsgs);
-		}
+		ec.printReport(System.out);
 		// check content
 		final Map<String,File> nameToPath = new TreeMap<String,File>(compareIgnoreCase);
 		scanForContent(workingDir,nameToPath);
@@ -679,9 +685,9 @@ public final class ScanIDs {
 			}
 			p.close();			
 		}
-		System.out.println("total Errors: " + totErrors);
+		System.out.println("total Errors: " + ec.nErrors);
 		System.out.println("done");
-		return totErrors;
+		return ec.nErrors;
 	}
 	
 	/**
