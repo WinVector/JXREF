@@ -16,6 +16,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+
 /**
  * State machine to extract program listings and callouts.
  * Users must call startElement(), endElement() and characters()
@@ -131,8 +132,10 @@ public final class ExampleClipper extends DefaultHandler {
 	private static final String PROGRAMLISTING = "programlisting";
 	private static final String CALLOUT = "callout";
 	private static final String TITLE = "title";
-	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { "example", "informalexample" }));
+	private static final String EXAMPLE = "example";
+	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { EXAMPLE, "informalexample" }));
 	private final ClipConsumer clipConsumer;
+	private final ErrorCollector ec;
 	// state
 	public final ItemLabeler itemLabeler = new ItemLabeler();
 	private Map<String,StringBuilder> charCollectors = new HashMap<String,StringBuilder>();
@@ -143,8 +146,9 @@ public final class ExampleClipper extends DefaultHandler {
 	private String progTitle = null;
 
 	
-	public ExampleClipper(final ClipConsumer clipConsumer) {
+	public ExampleClipper(final ErrorCollector ec, final ClipConsumer clipConsumer) {
 		this.clipConsumer = clipConsumer;
+		this.ec = ec;
 	}
 	
 	
@@ -154,15 +158,17 @@ public final class ExampleClipper extends DefaultHandler {
 			final Attributes attributes) throws SAXException {
 		itemLabeler.startElement(uri, localName, qName, attributes);
 		if(qName.equals(PROGRAMLISTING)) {
-			progText = null;
 			foundSuffix = attributes.getValue("lang");
+		} else if(qName.equals("calloutlist")) {
+			calloutText = new ArrayList<String>();
+		}
+		if(blocks.contains(qName)) {
+			progText = null;
+			progTitle = null;
 			calloutText = null;
 			nCallouts = 0;
 			charCollectors.put(PROGRAMLISTING,new StringBuilder());
-		} else if(qName.equals(TITLE)) {
 			charCollectors.put(TITLE,new StringBuilder());
-		} else if(qName.equals("calloutlist")) {
-			calloutText = new ArrayList<String>();
 		}
 		if(takeCallouts) {
 			if(qName.equals("co")) {
@@ -201,7 +207,11 @@ public final class ExampleClipper extends DefaultHandler {
 		} else if(qName.equals(CALLOUT)) {
 			calloutText.add(charCollectors.remove(CALLOUT).toString());
 		} else if(qName.equals(TITLE)) {
-			progTitle = charCollectors.remove(TITLE).toString();
+			progTitle = null;
+			final StringBuilder foundTitle = charCollectors.remove(TITLE);
+			if(null!=foundTitle) {
+				progTitle = foundTitle.toString();
+			}
 		}
 		if(blocks.contains(qName)) {
 			if((null!=progText)&&(progText.trim().length()>0)) {
@@ -210,6 +220,9 @@ public final class ExampleClipper extends DefaultHandler {
 				clip.positionCode = itemLabeler.curPositionCode(qName);
 				clip.positionDescription = itemLabeler.curPositionDescription(qName);
 				clip.clipTitle = progTitle;
+				if(EXAMPLE.equals(qName)&&((null==progTitle)||(progTitle.trim().length()<=0))) {
+					ec.mkError("no title", "no title: " + itemLabeler.curPositionCode(qName));
+				}
 				clip.foundSuffix = foundSuffix;
 				clip.progText = progText;
 				clip.calloutText = calloutText;
@@ -220,7 +233,10 @@ public final class ExampleClipper extends DefaultHandler {
 						throw new SAXException("caught: " + e);
 					}
 				}
+			} else {
+				ec.mkError("no prog", "no prog: " + itemLabeler.curPositionCode(qName));
 			}
+			progTitle = null;
 		}
 	}
 }
