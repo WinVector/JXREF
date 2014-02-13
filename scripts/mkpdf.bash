@@ -8,7 +8,7 @@
 
 # get script directory (from: http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in )
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-productionDir=$SCRIPTDIR/../Book
+productionDir=$SCRIPTDIR/../Production
 resultDir=$SCRIPTDIR/../previews
 toolDir=$SCRIPTDIR/../ManningTools/AAMakePDFv19
 
@@ -47,6 +47,7 @@ rm -f "c:\\sw\\text.txt"
 rm -f temp.xml
 rm -f *.temp.xml
 rm -f $toolDir/temp.xml
+rm -f tmpfig.xml
 
 for xmlf in $xmlist
 do
@@ -65,9 +66,11 @@ do
   if [ -e $xmlf ]
   then 
      pdff=${xmlf%.xml}.pdf
-     sh $toolDir/AAMakePDFMac.sh $xmlf $pdff
+     cat $xmlf | sed -e 's/\.jpg"/.pdf"/g' > tmpfig.xml
+     sh $toolDir/AAMakePDFMac.sh tmpfig.xml $pdff
      mv $pdff $resultDir/$pdff
      ## post clean
+     rm -f tmpfig.xml
      rm -f "c:\\sw\\text.txt"
      rm -f temp.xml
      rm -f *.temp.xml
@@ -81,6 +84,7 @@ rm -f "c:\\sw\\text.txt"
 rm -f temp.xml
 rm -f *.temp.xml
 rm -f $toolDir/temp.xml
+rm -f tmpfig.xml
 
 # return to first dir
 popd

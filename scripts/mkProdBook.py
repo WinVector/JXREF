@@ -19,7 +19,8 @@ import xml.etree.ElementTree as ET
 from subprocess import call
 
 scriptdir = os.path.dirname(os.path.realpath(__file__))
-sourcedir = os.path.join(scriptdir,'../Book')
+#sourcedir = os.path.join(scriptdir,'../Book')
+sourcedir = os.path.join(scriptdir,'../Production') # alternate dir we can build from
 resultdir = os.path.join(scriptdir,'../previews')
 sourceXML='book.xml'
 resPDF='PracticalDataScienceWithR.pdf'
@@ -77,10 +78,14 @@ for ti in contentList:
             with open(ti,'r') as inf:
                 content = inf.read()
                 with open('tp.xml', 'w') as f:
-                   content = re.sub(r'<xi:include\s[^><]+/>',' ',content)
+                   content = re.sub(r'<xi:include\s[^><]+/>',' ',content)  # prevent double includes
                    f.write(content)
         else:
-            shutil.copy(ti,"tp.xml")
+            with open(ti,'r') as inf:
+                content = inf.read()
+                with open('tp.xml', 'w') as f:
+                   content = re.sub(r'\.jpg"','.pdf"',content)  # revert any jpgs back to original pdfs
+                   f.write(content)
         with open(os.devnull, "w") as dn:
             call(pipes.quote(os.path.join(tooldir,'AAMakePDFMac.sh')) + ' tp.xml ' + pipes.quote(tpdf),shell=True,stdout=dn,stderr=dn)
             call(['pdfjoin',tpdf,spec,'--outfile',os.path.join(resultdir,tpdf)],stdout=dn,stderr=dn)

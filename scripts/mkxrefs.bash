@@ -4,7 +4,7 @@
 
 # get script directory (from: http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in )
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-bookDir=$SCRIPTDIR/../Book
+bookDir=$SCRIPTDIR/../Production
 
 pushd $bookDir
 /bin/rm -rf generated
