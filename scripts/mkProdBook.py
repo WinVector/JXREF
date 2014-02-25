@@ -18,11 +18,12 @@ import pipes
 import xml.etree.ElementTree as ET
 from subprocess import call
 
+# scriptdir = os.path.dirname('.') ## for degugging
 scriptdir = os.path.dirname(os.path.realpath(__file__))
-#sourcedir = os.path.join(scriptdir,'../Book')
 sourcedir = os.path.join(scriptdir,'../Production') # alternate dir we can build from
 resultdir = os.path.join(scriptdir,'../previews')
 sourceXML='book.xml'
+coverpath = os.path.join(sourcedir,'cover.pdf')
 resPDF='PracticalDataScienceWithR.pdf'
 tooldir=os.path.join(scriptdir,'../ManningTools/AAMakePDFv19')
 origdir=os.getcwd()
@@ -61,6 +62,9 @@ contentList = getContentList(sourcedir,os.path.join(sourcedir,sourceXML))
 print contentList
 pdfspecs=[]
 tmpfiles=[ 'c:\\sw\\text.txt', 'temp.xml', 'tp.xml', 'tp.xml.temp.xml' ]
+if os.path.isfile(coverpath):
+   pdfspecs.append(str(coverpath))
+   pdfspecs.append('1-1')
 for ti in contentList:
     nameLab = getXMLName(os.path.join(sourcedir,ti)) 
     ni = nameLab[0]
@@ -69,9 +73,7 @@ for ti in contentList:
         print ti,ni,li
         tpdf = ni + '_' + li + '.pdf'
         tmpfiles.append(tpdf)
-        spec='2-' # assume first page in each render is blank (has been historicly)
-        if len(pdfspecs)<=0:
-            spec='3-' # Frontmatter first 2 pages are useless
+        spec='2-' # assume first page in each render is blank (has been historicly the case)
         pdfspecs.append(tpdf)
         pdfspecs.append(spec)
         if not (ni=='chapter' or ni=='appendix'):
