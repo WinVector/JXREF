@@ -607,7 +607,7 @@ public final class ScanIDs {
 		for(final com.winvector.ScanIDs.CheckHandler.TagRec dest: checkHandler.mustReferTo.values()) {
 			final com.winvector.ScanIDs.CheckHandler.TagRec use = checkHandler.idRefToFirstIdRef.get(dest.id);
 			if(null==use) {
-				ec.mkError("file never referred to","Error: linkend " + dest + " never referred to");
+				ec.mkError("linkend never referred to","Error: linkend " + dest + " never referred to");
 			}
 		}
 		ec.printReport(System.out);
