@@ -88,7 +88,14 @@ public final class ScanIDs {
 	public static final Set<String> cantReferToId = new HashSet<String>(Arrays.asList(new String[] {
 			"sect3", "informalexample", "formalpara", "simplesect", "title", "para", "programlisting", "sect4",
 			"mediaobject", "imageobject", "imagedata"
-		}));
+	}));
+	
+	public static final Set<String> canLongReference = new HashSet<String>(Arrays.asList(new String[] {
+			"part", "chapter", "appendix",
+			"sect1", "sect2",
+			"example",
+			"table", "figure"
+	}));
 
 	
 	private static final class FileRec {
@@ -208,6 +215,7 @@ public final class ScanIDs {
 			public final String fieldType;
 			public final String id;
 			public final String label;
+			public final String descr;
 			public final int lineNum;
 			public final int colNum;
 			
@@ -217,6 +225,7 @@ public final class ScanIDs {
 				this.fieldType = fieldType;
 				this.id = id;
 				label = itemLabeler.curPositionCode(tagType);
+				descr = itemLabeler.curPositionDescription(tagType);
 				lineNum = locator.getLineNumber();
 				colNum = locator.getColumnNumber();
 			}
@@ -599,14 +608,17 @@ public final class ScanIDs {
 			} else {
 				final com.winvector.ScanIDs.CheckHandler.TagRec rec = checkHandler.idToRec.get(linkend.id);
 				if(null==rec) {
-					ec.mkError("file link broken","Error: link " + linkend + " broken");
+					ec.mkError("ref link broken","Error: link " + linkend + " broken");
 				} else {
 					final com.winvector.ScanIDs.CheckHandler.TagRec linkhead = checkHandler.idToRec.get(headId);
+					if(!canLongReference.contains(linkhead.tagType)) {
+						ec.mkError("long ref problem","Error: linkend " + linkend + " references a " + linkhead.tagType);						
+					}
 					if(cantReferToId.contains(linkhead.tagType)) {
-						ec.mkError("file ref problem","Error: linkend " + linkend + " references a " + linkhead.tagType);						
+						ec.mkError("forbid ref problem","Error: linkend " + linkend + " references a " + linkhead.tagType);						
 					}
 					if(rec.id.compareTo(linkend.id)!=0) {
-						ec.mkError("file casing","Error: linkend " + linkend + " confusing casing with " + rec.id);
+						ec.mkError("ref casing","Error: linkend " + linkend + " confusing casing with " + rec.id);
 					}
 				}
 			}
@@ -664,9 +676,9 @@ public final class ScanIDs {
 				p.println(line);
 			}
 			for(final com.winvector.ScanIDs.CheckHandler.TagRec idRec: checkHandler.idToRec.values()) {
-				if(idRec.fileName.compareToIgnoreCase(fi)!=0) {
+				if((idRec.fileName.compareToIgnoreCase(fi)!=0)&&(canLongReference.contains(idRec.tagType))) {
 					if(takeAllIds||usedIds.contains(idRec.id)) {
-						p.println("	<para id=\"" + idRec.id + "\" xreflabel=\"XRF:" + idRec.label + ":" + idRec.id + "\" />");
+						p.println("	<para id=\"" + idRec.id + "\" xreflabel=\"" + idRec.label + "\" />");
 					}
 				}
 			}

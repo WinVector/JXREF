@@ -27,6 +27,7 @@ public final class ItemLabeler extends DefaultHandler {
 		sectList.add(new TreeSet<String>(Arrays.asList(new String[] {"sect1"})));
 		sectList.add(new TreeSet<String>(Arrays.asList(new String[] {"sect2"})));
 	}
+	private final Set<String> countsNest = new TreeSet<String>();
 	// state
 	private final LinkedList<String> tagStack = new LinkedList<String>();
 	private String chapterNumber = "";
@@ -37,13 +38,21 @@ public final class ItemLabeler extends DefaultHandler {
 	private StringBuilder chars = null;
 	private String titleText = null;
 	
+	public ItemLabeler() {
+		for(final Set<String> si: sectList) {
+			countsNest.addAll(si);
+		}
+	}
+	
 	
 	private String posKey(final String qName) {
 		final StringBuilder b = new StringBuilder();
 		b.append(qName);
-		b.append("." + chapterNumber);
-		for(int i=1;i<depth;++i) {
-			b.append("." + count[i]);
+		if(countsNest.contains(qName)) {
+			b.append("." + chapterNumber);
+			for(int i=1;i<depth;++i) {
+				b.append("." + count[i]);
+			}
 		}
 		return b.toString();
 	}
@@ -54,13 +63,14 @@ public final class ItemLabeler extends DefaultHandler {
 	
 	public String curPositionCode(final String qName) {
 		final StringBuilder b = new StringBuilder();
-		b.append(qName);
 		final String posKey = posKey(qName);
 		final Integer bc = blockCounts.get(posKey);
-		if(null!=bc) {
-			b.append(":" + bc);
+		if((null!=bc)&&(!countsNest.contains(qName))) {
+			b.append(qName + " " + chapterNumber + "." + bc + " of section ");
+		} else {
+			b.append(qName + " ");
 		}
-		b.append("_" + chapterNumber);
+		b.append(chapterNumber);
 		for(int i=1;i<depth;++i) {
 			b.append("." + count[i]);
 		}
@@ -69,12 +79,7 @@ public final class ItemLabeler extends DefaultHandler {
 	
 	public String curPositionDescription(final String qName) {
 		final StringBuilder b = new StringBuilder();
-		b.append(qName);
-		final String posKey = posKey(qName);
-		final Integer bc = blockCounts.get(posKey);
-		if(null!=bc) {
-			b.append(":" + bc);
-		}
+		b.append("(" + curPositionCode(qName) + ") ");
 		for(int i=0;i<depth;++i) {
 			b.append(" : " + name[i]);
 		}
@@ -100,6 +105,12 @@ public final class ItemLabeler extends DefaultHandler {
 			++depth;
 		}
 		tagStack.addLast(qName);
+		final String posKey = posKey(qName);
+		Integer oc = blockCounts.get(posKey);
+		if(null==oc) {
+			oc = 0;
+		}
+		blockCounts.put(posKey,oc+1);
 	}
 	
 	@Override
@@ -123,19 +134,13 @@ public final class ItemLabeler extends DefaultHandler {
 			titleText = chars.toString();
 			chars = null;
 		}
-		final String posKey = posKey(qName);
+		
 		tagStack.removeLast();
 		if(depth>0) {
 			if(TITLE.equals(qName)) { 
 				if(null==name[depth-1]) {  // waiting on a section title
 					name[depth-1] = titleText;
 				}
-			} else {
-				Integer oc = blockCounts.get(posKey);
-				if(null==oc) {
-					oc = 0;
-				}
-				blockCounts.put(posKey,oc+1);
 			}
 			if(sectList.get(depth-1).contains(qName)) {
 				--depth;
