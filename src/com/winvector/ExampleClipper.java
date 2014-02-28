@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -134,10 +135,12 @@ public final class ExampleClipper extends DefaultHandler {
 	private static final String TITLE = "title";
 	private static final String EXAMPLE = "example";
 	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { EXAMPLE, "informalexample" }));
+	private final Set<String> trackedTextContexts = new HashSet<String>(Arrays.asList(new String[] { TITLE, PROGRAMLISTING, CALLOUT }));
 	private final ClipConsumer clipConsumer;
 	private final ErrorCollector ec;
 	// state
 	public final ItemLabeler itemLabeler = new ItemLabeler();
+	private LinkedList<String> curContext = new LinkedList<String>();
 	private Map<String,StringBuilder> charCollectors = new HashMap<String,StringBuilder>();
 	private int nCallouts = 0;
 	private String foundSuffix = null;
@@ -181,6 +184,9 @@ public final class ExampleClipper extends DefaultHandler {
 				charCollectors.put(CALLOUT,new StringBuilder());
 			}
 		}
+		if(trackedTextContexts.contains(qName)) {
+			curContext.addLast(qName);
+		}
 	}
 	
 	@Override
@@ -189,9 +195,12 @@ public final class ExampleClipper extends DefaultHandler {
             final int length)
             throws SAXException {
 		itemLabeler.characters(ch, start, length);
-		for(final StringBuilder chars: charCollectors.values()) {
-			for(int i=start;i<start+length;++i) {
-				chars.append(ch[i]);
+		if(!curContext.isEmpty()) {
+			final StringBuilder chars = charCollectors.get(curContext.getLast());
+			if(null!=chars) {
+				for(int i=start;i<start+length;++i) {
+					chars.append(ch[i]);
+				}
 			}
 		}
 	}
@@ -203,14 +212,14 @@ public final class ExampleClipper extends DefaultHandler {
             throws SAXException {
 		itemLabeler.endElement(uri, localName, qName);
 		if(qName.equals(PROGRAMLISTING)) {
-			progText = charCollectors.remove(PROGRAMLISTING).toString();
+			progText = charCollectors.remove(PROGRAMLISTING).toString().trim();
 		} else if(qName.equals(CALLOUT)) {
-			calloutText.add(charCollectors.remove(CALLOUT).toString());
+			calloutText.add(charCollectors.remove(CALLOUT).toString().trim());
 		} else if(qName.equals(TITLE)) {
 			progTitle = null;
 			final StringBuilder foundTitle = charCollectors.remove(TITLE);
 			if(null!=foundTitle) {
-				progTitle = foundTitle.toString();
+				progTitle = foundTitle.toString().trim();
 			}
 		}
 		if(blocks.contains(qName)) {
@@ -237,6 +246,9 @@ public final class ExampleClipper extends DefaultHandler {
 				ec.mkError("no prog", "no prog: " + itemLabeler.curPositionCode(qName));
 			}
 			progTitle = null;
+		}
+		if((!curContext.isEmpty())&&(trackedTextContexts.contains(qName))) {
+			curContext.removeLast();
 		}
 	}
 }

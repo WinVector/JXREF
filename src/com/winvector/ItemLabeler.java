@@ -81,7 +81,7 @@ public final class ItemLabeler extends DefaultHandler {
 		final StringBuilder b = new StringBuilder();
 		b.append("(" + curPositionCode(qName) + ") ");
 		for(int i=0;i<depth;++i) {
-			b.append(" : " + name[i]);
+			b.append(" : " + ("" + name[i]).replaceAll("\\s+"," ").trim());
 		}
 		return b.toString();
 	}
