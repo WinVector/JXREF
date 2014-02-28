@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -283,6 +284,7 @@ public final class ScanIDs {
 		public final Map<String,TagRec> cantGloballyRef = new TreeMap<String,TagRec>(compareIgnoreCase); // ids that must be used (co callouts at this point)
 		public final Map<String,TagRec> mustReferTo = new TreeMap<String,TagRec>(compareIgnoreCase); // ids must be used somewhere
 		public final Map<String,TagRec> idRefToFirstIdRef = new TreeMap<String,TagRec>(compareIgnoreCase); // uses of ids to reference  (maps to exact casing of first use)
+		public final Map<String,SortedSet<String>> fileToUsedIds = new TreeMap<String,SortedSet<String>>(); 
 		public final Map<String,FileRec> fileRefToExamplePerXML = new TreeMap<String,FileRec>(compareIgnoreCase); // file refs in XML
 		public final Map<String,FileRec> fileResfToExample = new TreeMap<String,FileRec>(compareIgnoreCase); // file refs overall
 		// callout declaration to use matching
@@ -294,6 +296,9 @@ public final class ScanIDs {
 
 		public void startXMLFile(final String fi) {
 			this.fi = fi;
+			if(!fileToUsedIds.containsKey(fi)) {
+				fileToUsedIds.put(fi,new TreeSet<String>());
+			}
 			knownCallOuts = null;
 			perXMLResourceDirs.clear();
 			itemLabeler = new ItemLabeler();
@@ -383,6 +388,7 @@ public final class ScanIDs {
 					if(!goodID(linkEnd)) {
 						ec.mkError(" bad id (must start with a letter and have no whitespace)","Error: " + ourExample + " bad id (must start with a letter and have no whitespace)");
 					} else {
+						fileToUsedIds.get(fi).add(linkEnd);
 						final TagRec prevExample = idRefToFirstIdRef.get(linkEnd);
 						if(null!=prevExample) {
 							if(prevExample.id.compareTo(linkEnd)!=0) {
@@ -537,6 +543,7 @@ public final class ScanIDs {
 	}
 	
 	public int doWork(final String zipName) throws IOException, ParserConfigurationException, SAXException {
+		boolean takeAllIds = false;
 		System.out.println("working in: " + workingDir.getAbsolutePath());
 		final SAXParserFactory saxFactory = SAXParserFactory.newInstance();
 		final SAXParser saxParser = saxFactory.newSAXParser();
@@ -649,6 +656,7 @@ public final class ScanIDs {
 			if(fi.equalsIgnoreCase(bookFileName)) {
 				continue;
 			}
+			final SortedSet<String> usedIds = checkHandler.fileToUsedIds.get(fi);
 			final File resFile = new File(destDir,fi + ourSuffix);
 			//System.out.println("\twriting: " + resFile);
 			final PrintStream p = new PrintStream(resFile);
@@ -657,7 +665,9 @@ public final class ScanIDs {
 			}
 			for(final com.winvector.ScanIDs.CheckHandler.TagRec idRec: checkHandler.idToRec.values()) {
 				if(idRec.fileName.compareToIgnoreCase(fi)!=0) {
-					p.println("	<para id=\"" + idRec.id + "\" xreflabel=\"XRF:" + idRec.label + ":" + idRec.id + "\" />");
+					if(takeAllIds||usedIds.contains(idRec.id)) {
+						p.println("	<para id=\"" + idRec.id + "\" xreflabel=\"XRF:" + idRec.label + ":" + idRec.id + "\" />");
+					}
 				}
 			}
 			for(final String line: footer) {
