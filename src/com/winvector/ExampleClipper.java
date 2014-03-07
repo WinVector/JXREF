@@ -219,7 +219,7 @@ public final class ExampleClipper extends DefaultHandler {
 			progTitle = null;
 			final StringBuilder foundTitle = charCollectors.remove(TITLE);
 			if(null!=foundTitle) {
-				progTitle = foundTitle.toString().trim();
+				progTitle = foundTitle.toString().replaceAll("\\s+"," ").trim();
 			}
 		}
 		if(blocks.contains(qName)) {

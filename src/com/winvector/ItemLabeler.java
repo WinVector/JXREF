@@ -131,7 +131,7 @@ public final class ItemLabeler extends DefaultHandler {
             final String qName)
             throws SAXException {
 		if(qName.equals(TITLE)) {
-			titleText = chars.toString();
+			titleText = chars.toString().replaceAll("\\s+"," ").trim();
 			chars = null;
 		}
 		
