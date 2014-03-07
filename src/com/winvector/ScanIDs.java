@@ -671,21 +671,29 @@ public final class ScanIDs {
 			final SortedSet<String> usedIds = checkHandler.fileToUsedIds.get(fi);
 			final File resFile = new File(destDir,fi + ourSuffix);
 			//System.out.println("\twriting: " + resFile);
-			final PrintStream p = new PrintStream(resFile);
+			final PrintStream pXML = new PrintStream(resFile);
 			for(final String line: header) {
-				p.println(line);
+				pXML.println(line);
 			}
 			for(final com.winvector.ScanIDs.CheckHandler.TagRec idRec: checkHandler.idToRec.values()) {
 				if((idRec.fileName.compareToIgnoreCase(fi)!=0)&&(canLongReference.contains(idRec.tagType))) {
 					if(takeAllIds||usedIds.contains(idRec.id)) {
-						p.println("	<para id=\"" + idRec.id + "\" xreflabel=\"" + idRec.label + "\" />");
+						pXML.println("	<para id=\"" + idRec.id + "\" xreflabel=\"" + idRec.label + "\" />");
 					}
 				}
 			}
 			for(final String line: footer) {
-				p.println(line);
+				pXML.println(line);
 			}
-			p.close();			
+			pXML.close();
+			final PrintStream pTSV = new PrintStream(new File(destDir,fi + "_xrefs.tsv"));
+			pTSV.println("xrefid" + "\t" + "destination");
+			for(final com.winvector.ScanIDs.CheckHandler.TagRec idRec: checkHandler.idToRec.values()) {
+				if(canLongReference.contains(idRec.tagType)&&usedIds.contains(idRec.id)) {
+					pTSV.println(idRec.id + "\t" + idRec.label);
+				}
+			}
+			pTSV.close();
 		}
 		System.out.println("total Errors: " + ec.nErrors);
 		System.out.println("done");
