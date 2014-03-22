@@ -57,6 +57,10 @@ public final class ItemLabeler extends DefaultHandler {
 		return b.toString();
 	}
 	
+	public String chapterSymbol() {
+		return chapterNumber;
+	}
+	
 	public String chapterName() {
 		return name[0];
 	}

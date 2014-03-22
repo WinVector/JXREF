@@ -28,6 +28,7 @@ public final class ExampleClipper extends DefaultHandler {
 
 	
 	public final class Clip {
+		public final String chapterSymbol;
 		public String chapter;
 		public String positionCode;
 		public String positionDescription;
@@ -35,6 +36,10 @@ public final class ExampleClipper extends DefaultHandler {
 		public String clipTitle;
 		public String progText;
 		public ArrayList<String> calloutText;
+		
+		public Clip(final String chapterSymbol) {
+			this.chapterSymbol = chapterSymbol;
+		}
 		
 		@Override
 		public String toString() {
@@ -224,7 +229,7 @@ public final class ExampleClipper extends DefaultHandler {
 		}
 		if(blocks.contains(qName)) {
 			if((null!=progText)&&(progText.trim().length()>0)) {
-				final Clip clip = new Clip();
+				final Clip clip = new Clip(itemLabeler.chapterSymbol());
 				clip.chapter = itemLabeler.chapterName();
 				clip.positionCode = itemLabeler.curPositionCode(qName);
 				clip.positionDescription = itemLabeler.curPositionDescription(qName);
