@@ -110,12 +110,13 @@ public final class ExampleClipper extends DefaultHandler {
 		private final String defaultFileSuffix;
 		private int clipNumber = 0;
 		
-		public ClipZipper(final ZipOutputStream o, final String dirName, final String readmeStr, final String defaultFileSuffix) throws IOException {
+		public ClipZipper(final ZipOutputStream o, final String dirName, final String readmeStr, final String defaultFileSuffix, final long time) throws IOException {
 			this.o = o;
 			this.dirName = dirName;
 			this.defaultFileSuffix = defaultFileSuffix;
 			final String safeFileName = safeFileName(dirName + "/" + "README.txt");
 			final ZipEntry e = new ZipEntry(safeFileName);
+			e.setTime(time);
 			o.putNextEntry(e);
 			final byte[] data = readmeStr.getBytes("UTF-8");
 		    o.write(data, 0, data.length);
@@ -134,6 +135,7 @@ public final class ExampleClipper extends DefaultHandler {
 					+ "/" + cleanDirComponent(clipNF.format(clipNumber) + "_" + clip.positionCode) 
 					+ fileSuffix);
 			final ZipEntry e = new ZipEntry(safeFileName);
+			e.setTime(clip.lastModifiedTime.getTime());
 			o.putNextEntry(e);
 			if(clip.progText.indexOf("&amp;")>=0) {
 				System.out.println("Warning clip has '&amp;'s: " + safeFileName);

@@ -567,7 +567,16 @@ public final class ScanIDs {
 			final File of = new File(zipName + ".zip");
 			System.out.println("writing: " + of.getAbsolutePath());
 			final ZipOutputStream o = new ZipOutputStream(new FileOutputStream(of));
-			final ClipConsumer clipConsumer = new ClipZipper(o,zipName,readMeStr,defaultFileSuffix);
+			long maxTime = 0L;
+			for(final Entry<String, Integer> me: xmlIncCounts.entrySet()) {
+				final String fi = me.getKey();
+				final int count = me.getValue();
+				if(count<=0) {
+					final File f = new File(workingDir,fi);
+					maxTime = Math.max(maxTime,f.lastModified());
+				}
+			}
+			final ClipConsumer clipConsumer = new ClipZipper(o,zipName,readMeStr,defaultFileSuffix,maxTime);
 			for(final Entry<String, Integer> me: xmlIncCounts.entrySet()) {
 				final String fi = me.getKey();
 				final int count = me.getValue();
