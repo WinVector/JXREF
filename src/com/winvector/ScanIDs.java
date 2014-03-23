@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -142,9 +143,9 @@ public final class ScanIDs {
 		private StringBuilder titleBuf = null;
 		
 		
-		public OutlineHandler(final ClipConsumer clipConsumer, final ErrorCollector ec) {
+		public OutlineHandler(final ClipConsumer clipConsumer, final ErrorCollector ec, final Date lastModifiedTime) {
 			this.ec = ec;
-			exampleClipper = new ExampleClipper(ec,clipConsumer);
+			exampleClipper = new ExampleClipper(ec,clipConsumer,lastModifiedTime);
 			exampleClipper.takeCallouts = Boolean.parseBoolean(props.getProperty("TakeCallouts"));
 			exampleClipper.openComment = props.getProperty("OpenComment");
 			exampleClipper.closeComment = props.getProperty("CloseComment");
@@ -573,7 +574,7 @@ public final class ScanIDs {
 				if(count<=0) {
 					final File f = new File(workingDir,fi);
 					//System.out.println("\treading: " + fi + "\t" + f);
-					final OutlineHandler dataHandler = new OutlineHandler(clipConsumer,ec);
+					final OutlineHandler dataHandler = new OutlineHandler(clipConsumer,ec,new Date(f.lastModified()));
 					saxParser.parse(f,dataHandler);
 				}
 			}

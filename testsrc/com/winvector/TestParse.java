@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.zip.ZipOutputStream;
 
 import javax.xml.parsers.SAXParser;
@@ -25,7 +26,7 @@ public class TestParse {
 		final File f = File.createTempFile("testZip",".zip");
 		//System.out.println("writing: " + f.getAbsolutePath());
 		final ZipOutputStream o = new ZipOutputStream(new FileOutputStream(f));
-		final ExampleClipper sectCounter = new ExampleClipper(new ErrorCollector(),new ClipZipper(o,"bd","TestText",".txt"));
+		final ExampleClipper sectCounter = new ExampleClipper(new ErrorCollector(),new ClipZipper(o,"bd","TestText",".txt"), new Date());
 		final InputStream source = this.getClass().getClassLoader().getResourceAsStream("com/winvector/ExampleElt.xml");
 		saxParser.parse(source,sectCounter);
 		o.close();
@@ -42,7 +43,7 @@ public class TestParse {
 				System.out.println(clip);
 			}
 		};
-		final ExampleClipper sectCounter = new ExampleClipper(new ErrorCollector(),clipDest);
+		final ExampleClipper sectCounter = new ExampleClipper(new ErrorCollector(),clipDest, new Date());
 		final InputStream source = this.getClass().getClassLoader().getResourceAsStream("com/winvector/ExampleElt.xml");
 		saxParser.parse(source,sectCounter);
 	}

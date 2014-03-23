@@ -5,11 +5,13 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -28,6 +30,7 @@ public final class ExampleClipper extends DefaultHandler {
 
 	
 	public final class Clip {
+		public final Date lastModifiedTime;
 		public final String chapterSymbol;
 		public String chapter;
 		public String positionCode;
@@ -37,8 +40,9 @@ public final class ExampleClipper extends DefaultHandler {
 		public String progText;
 		public ArrayList<String> calloutText;
 		
-		public Clip(final String chapterSymbol) {
+		public Clip(final String chapterSymbol, final Date lastModifiedTime) {
 			this.chapterSymbol = chapterSymbol;
+			this.lastModifiedTime = lastModifiedTime;
 		}
 		
 		@Override
@@ -82,13 +86,28 @@ public final class ExampleClipper extends DefaultHandler {
 		return s;
 	}
 	
+	private static String zPad(final String s, final int k) {
+		final StringBuffer b = new StringBuffer();
+		final Pattern p = Pattern.compile("\\d+");
+		if(p.matcher(s).matches()) {
+			b.append("c");
+		} else {
+			b.append("x");
+		}
+		int n = k - s.length();
+		while(n>0) {
+			b.append('0');
+			--n;
+		}
+		b.append(s);
+		return b.toString();
+	}
+	
 	public static final class ClipZipper implements ClipConsumer {
 		private final ZipOutputStream o;
 		private final String dirName;
 		private final NumberFormat clipNF = new DecimalFormat("00000");
-		private final NumberFormat chapNF = new DecimalFormat("00");
 		private final String defaultFileSuffix;
-		private final Map<String,Integer> chNumbers = new HashMap<String,Integer>();
 		private int clipNumber = 0;
 		
 		public ClipZipper(final ZipOutputStream o, final String dirName, final String readmeStr, final String defaultFileSuffix) throws IOException {
@@ -106,17 +125,12 @@ public final class ExampleClipper extends DefaultHandler {
 		@Override
 		public void takeClip(final Clip clip) throws IOException {
 			++clipNumber;
-			Integer chNumber = chNumbers.get(clip.chapter);
-			if(null==chNumber) {
-				chNumber = chNumbers.size() + 1;
-				chNumbers.put(clip.chapter,chNumber);
-			}
 			String fileSuffix = defaultFileSuffix;
 			if((clip.foundSuffix!=null)&&(clip.foundSuffix.trim().length()>0)) {
 				fileSuffix = "." + clip.foundSuffix.trim();
 			}
 			final String safeFileName = safeFileName(dirName 
-					+ "/" + cleanDirComponent(chapNF.format(chNumber) + "_" + clip.chapter) 
+					+ "/" + cleanDirComponent(zPad(clip.chapterSymbol,2) + "_" + clip.chapter) 
 					+ "/" + cleanDirComponent(clipNF.format(clipNumber) + "_" + clip.positionCode) 
 					+ fileSuffix);
 			final ZipEntry e = new ZipEntry(safeFileName);
@@ -144,6 +158,7 @@ public final class ExampleClipper extends DefaultHandler {
 	private final ClipConsumer clipConsumer;
 	private final ErrorCollector ec;
 	// state
+	public final Date lastModifiedTime;
 	public final ItemLabeler itemLabeler = new ItemLabeler();
 	private LinkedList<String> curContext = new LinkedList<String>();
 	private Map<String,StringBuilder> charCollectors = new HashMap<String,StringBuilder>();
@@ -154,7 +169,8 @@ public final class ExampleClipper extends DefaultHandler {
 	private String progTitle = null;
 
 	
-	public ExampleClipper(final ErrorCollector ec, final ClipConsumer clipConsumer) {
+	public ExampleClipper(final ErrorCollector ec, final ClipConsumer clipConsumer, final Date lastModifiedTime) {
+		this.lastModifiedTime = lastModifiedTime;
 		this.clipConsumer = clipConsumer;
 		this.ec = ec;
 	}
@@ -229,7 +245,7 @@ public final class ExampleClipper extends DefaultHandler {
 		}
 		if(blocks.contains(qName)) {
 			if((null!=progText)&&(progText.trim().length()>0)) {
-				final Clip clip = new Clip(itemLabeler.chapterSymbol());
+				final Clip clip = new Clip(itemLabeler.chapterSymbol(),lastModifiedTime);
 				clip.chapter = itemLabeler.chapterName();
 				clip.positionCode = itemLabeler.curPositionCode(qName);
 				clip.positionDescription = itemLabeler.curPositionDescription(qName);
