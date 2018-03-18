@@ -553,7 +553,7 @@ public final class ScanIDs {
 	}
 	
 	public int doWork(final String zipName) throws IOException, ParserConfigurationException, SAXException {
-		boolean takeAllIds = false;
+		boolean takeAllIds = true;
 		System.out.println("working in: " + workingDir.getAbsolutePath());
 		final SAXParserFactory saxFactory = SAXParserFactory.newInstance();
 		final SAXParser saxParser = saxFactory.newSAXParser();
