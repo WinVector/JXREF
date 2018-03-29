@@ -216,6 +216,7 @@ public final class ScanIDs {
 			public final String fieldType;
 			public final String id;
 			public final String label;
+			@SuppressWarnings("unused")
 			public final String descr;
 			public final int lineNum;
 			public final int colNum;
@@ -552,6 +553,10 @@ public final class ScanIDs {
 		}
 	}
 	
+	private String stripFirstWord(final String s) {
+		return(s.replaceAll("^[a-zA-Z0-9]*[ ]+", ""));
+	}
+	
 	public int doWork(final String zipName) throws IOException, ParserConfigurationException, SAXException {
 		boolean takeAllIds = true;
 		System.out.println("working in: " + workingDir.getAbsolutePath());
@@ -688,7 +693,7 @@ public final class ScanIDs {
 			for(final com.winvector.ScanIDs.CheckHandler.TagRec idRec: checkHandler.idToRec.values()) {
 				if((idRec.fileName.compareToIgnoreCase(fi)!=0)&&(canLongReference.contains(idRec.tagType))) {
 					if(takeAllIds||usedIds.contains(idRec.id)) {
-						pXML.println("	<para id=\"" + idRec.id + "\" xreflabel=\"" + idRec.label + "\" />");
+						pXML.println("	<para id=\"" + idRec.id + "\" xreflabel=\"" + stripFirstWord(idRec.label) + "\" />");
 					}
 				}
 			}
@@ -697,10 +702,10 @@ public final class ScanIDs {
 			}
 			pXML.close();
 			final PrintStream pTSV = new PrintStream(new File(destDir,fi + "_xrefs.tsv"));
-			pTSV.println("xrefid" + "\t" + "destination");
+			pTSV.println("xrefid" + "\t" + "destination" + "\t" + "label");
 			for(final com.winvector.ScanIDs.CheckHandler.TagRec idRec: checkHandler.idToRec.values()) {
 				if(canLongReference.contains(idRec.tagType)&&usedIds.contains(idRec.id)) {
-					pTSV.println(idRec.id + "\t" + idRec.label);
+					pTSV.println(idRec.id + "\t" + stripFirstWord(idRec.label) + "\t" + idRec.label);
 				}
 			}
 			pTSV.close();
