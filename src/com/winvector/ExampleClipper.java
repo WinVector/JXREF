@@ -155,7 +155,7 @@ public final class ExampleClipper extends DefaultHandler {
 	private static final String CALLOUT = "callout";
 	private static final String TITLE = "title";
 	private static final String EXAMPLE = "example";
-	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { EXAMPLE, "informalexample" }));
+	private final Set<String> blocks = new HashSet<String>(Arrays.asList(new String[] { EXAMPLE, "informalexample", "equation" }));
 	private final Set<String> trackedTextContexts = new HashSet<String>(Arrays.asList(new String[] { TITLE, PROGRAMLISTING, CALLOUT }));
 	private final ClipConsumer clipConsumer;
 	private final ErrorCollector ec;
